@@ -28,7 +28,7 @@ const GridUI = {
       const ie = U.el('div', { class: 'gitem t-' + it.t + (opts.selected === e ? ' sel' : ''), title: it.n + (it.desc ? ' — ' + it.desc : ''), style: { left: e.gx * C + 1 + 'px', top: e.gy * C + 1 + 'px', width: w * C - 2 + 'px', height: h * C - 2 + 'px' } });
       ie.innerHTML = this.itemInner(e, w, h);
       this.makeDraggable(ie, { from: 'grid', list, entry: e, g }, () => opts.onSelect && opts.onSelect(e));
-      if (opts.onContext) ie.addEventListener('contextmenu', ev => { ev.preventDefault(); if (!this.drag) opts.onContext(e, ev); });
+      if (opts.onContext) ie.addEventListener('contextmenu', ev => { ev.preventDefault(); if (!this.drag && !this.splitDown) opts.onContext(e, ev); });
       el.appendChild(ie);
     }
     this.grids.push({ el, hl, list, g, onChange: opts.onChange });
@@ -41,6 +41,10 @@ const GridUI = {
     el.addEventListener('pointerdown', ev => {
       if (ev.button !== 0) return;
       ev.preventDefault();
+      // Shift+drag = take half the stack, Ctrl/Cmd+drag = take one
+      const e0 = src.entry, stack = Inv.isStack(e0.id) && e0.q > 1;
+      src.qty = stack && (ev.ctrlKey || ev.metaKey) ? 1 : stack && ev.shiftKey ? Math.ceil(e0.q / 2) : null;
+      this.splitDown = !!(ev.ctrlKey || ev.metaKey);   // on a Mac ctrl+click also fires contextmenu: ignore that one
       const sx = ev.clientX, sy = ev.clientY;
       const r = el.getBoundingClientRect();
       const offX = ev.clientX - r.left, offY = ev.clientY - r.top;
@@ -49,6 +53,7 @@ const GridUI = {
         if (this.drag) this.move(mv);
       };
       const up = uv => {
+        setTimeout(() => { this.splitDown = false; }, 0);
         window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
         if (this.drag) this.end(uv); else if (onClick) onClick();
       };
@@ -67,7 +72,7 @@ const GridUI = {
     const C = this.CELL; const [w, h] = this.dragDims();
     this.drag.offX = Math.min(offX, w * C - 8); this.drag.offY = Math.min(offY, h * C - 8);
     this.keyRot = k => { if (k.code === 'KeyR') { this.rotate(); this.move(this.lastEv); } };
-    this.ctxRot = c => { c.preventDefault(); this.rotate(); this.move(this.lastEv); };
+    this.ctxRot = c => { c.preventDefault(); if (this.splitDown && c.button !== 2) return; this.rotate(); this.move(this.lastEv); };
     window.addEventListener('keydown', this.keyRot);
     window.addEventListener('contextmenu', this.ctxRot);
   },
@@ -76,7 +81,8 @@ const GridUI = {
     const d = this.drag, C = this.CELL, [w, h] = this.dragDims();
     d.ghost.style.width = w * C + 'px'; d.ghost.style.height = h * C + 'px';
     const e = Object.assign({}, d.src.entry, { rot: d.rot ? 1 : 0 });
-    if (d.src.from !== 'grid' && Inv.isStack(e.id)) e.q = Math.min(e.q, ITEMS[e.id].st);
+    if (d.src.qty) e.q = d.src.qty;
+    else if (d.src.from !== 'grid' && Inv.isStack(e.id)) e.q = Math.min(e.q, ITEMS[e.id].st);
     d.ghost.innerHTML = this.itemInner(e, w, h);
   },
   rotate() {
@@ -139,21 +145,32 @@ const GridUI = {
     this.drag = null;
     if (!t) { this.refresh(); return; }
     const src = d.src, e = src.entry, it = ITEMS[e.id];
-    if (t.zone) { if (t.zone.onDrop(src)) this.refresh(); else this.refresh(); return; }
+    const part = src.qty && src.qty < e.q ? src.qty : null;   // split drag (Shift = half, Ctrl = one)
+    if (t.zone) {
+      if (!part) { t.zone.onDrop(src); this.refresh(); return; }
+      // hand the zone a split-off piece; take from the original only what the zone actually used
+      const piece = { id: e.id, q: part }; let gone = false;
+      t.zone.onDrop(Object.assign({}, src, { entry: piece, qty: null, remove: () => { gone = true; } }));
+      const used = gone ? part : part - piece.q;
+      if (used > 0) { e.q -= used; if (e.q <= 0) this.removeFromSource(src); }
+      this.refresh(); return;
+    }
     const G0 = t.grid, rot = d.rot ? 1 : 0;
     this.drag = d; const merge = this.mergeTarget(G0, t.x, t.y); this.drag = null;
     if (merge) {
       const room = it.st - merge.q;
-      const amt = Math.min(room, e.q);
+      const amt = Math.min(room, part || e.q);
       merge.q += amt; e.q -= amt;
       if (e.q <= 0) this.removeFromSource(src);
       this.refresh(G0); return;
     }
-    if (!Inv.fits(G0.list, G0.g, e, t.x, t.y, rot, e)) { toast('วางตรงนั้นไม่ได้ — พื้นที่ไม่พอ', 'warn'); this.refresh(); return; }
-    if (src.from === 'grid' && src.list === G0.list) { e.gx = t.x; e.gy = t.y; e.rot = rot; this.refresh(G0); return; }
-    // move from other list into this grid
+    const probe = part ? { id: e.id, q: part } : e;
+    if (!Inv.fits(G0.list, G0.g, probe, t.x, t.y, rot, part && src.list === G0.list ? null : e)) { toast('วางตรงนั้นไม่ได้ — พื้นที่ไม่พอ', 'warn'); this.refresh(); return; }
+    if (!part && src.from === 'grid' && src.list === G0.list) { e.gx = t.x; e.gy = t.y; e.rot = rot; this.refresh(G0); return; }
+    // move (or split) into this grid
     let moved;
-    if (Inv.isStack(e.id) && e.q > it.st) { moved = { id: e.id, q: it.st }; e.q -= it.st; }
+    if (part) { moved = { id: e.id, q: part }; e.q -= part; }
+    else if (Inv.isStack(e.id) && e.q > it.st) { moved = { id: e.id, q: it.st }; e.q -= it.st; }
     else { moved = e; this.removeFromSource(src); }
     moved.gx = t.x; moved.gy = t.y; moved.rot = rot;
     G0.list.push(moved);
@@ -187,6 +204,45 @@ const GridUI = {
     this.menu = m;
     setTimeout(() => { this._close = e3 => { if (!m.contains(e3.target)) this.closeMenu(); }; addEventListener('pointerdown', this._close, true); }, 0);
   },
+  // ---- item info popup (right-click → ข้อมูล) ----
+  infoLines(e) {
+    const it = ITEMS[e.id], L = [];
+    const row = (k, v) => L.push([k, v]);
+    row('ประเภท', (TYPE_LABEL[it.t] || it.t) + (it.t === 'weapon' ? ' · ' + SLOT_LABEL[CLS_SLOT[it.cls]] : ''));
+    row('ขนาดในเป้', `${it.gw}×${it.gh} ช่อง` + (it.st > 1 ? ` · ซ้อนได้ ${it.st}` : ''));
+    if (it.t === 'weapon') {
+      const ch = typeof G !== 'undefined' && G ? G.char : Object.keys(CHARACTERS)[0], s = wStats(e, ch);
+      row('ความแรง', `${Math.round(s.dmg)}${it.pellets ? ' × ' + it.pellets + ' ลูก' : ''} ต่อครั้ง` + (e.lvl ? ` (อัปเกรด +${e.lvl})` : ''));
+      row('ความเร็ว', `${(1 / s.rate).toFixed(1)} ครั้ง/วินาที` + (it.auto ? ' · ยิงรัวได้' : ''));
+      if (it.cls === 'melee') row('ระยะ', `${Math.round(s.range || it.range)} (ประชิด)`);
+      else {
+        { const pack = typeof Run !== 'undefined' && Run.active ? Run.p.backpack : G.backpack; row('ใช้กระสุน', `${ITEMS[it.ammo].n}  (ในเป้ ${Inv.count(pack, it.ammo)}` + (Run.active ? ')' : ` · ในคลัง ${Inv.count(G.stash, it.ammo)})`)); }
+        row('แม็กกาซีน', `${e.mag ?? 0}/${s.mag} นัด · รีโหลด ${s.reload.toFixed(1)} วิ`);
+        row('ระยะยิง', `${it.range}` + (it.pierce ? ` · ทะลุ ${it.pierce} ตัว` : ''));
+        row('เสียง', it.noise >= 800 ? 'ดังมาก' : it.noise >= 600 ? 'ดัง' : it.noise >= 300 ? 'ปานกลาง' : 'เงียบ');
+      }
+      row('ความทน', `${Math.ceil(dur(e))}%` + (e.rep ? ` · ซ่อมแล้ว ${e.rep}/5 ครั้ง` : '') + (repairCap(e) > 0 ? ` · ซ่อมได้สูงสุด ${repairCap(e)}%` : ' · ซ่อมไม่ได้แล้ว'));
+      const att = e.att && Object.values(e.att).filter(Boolean);
+      if (att && att.length) row('อุปกรณ์เสริม', att.map(a => ITEMS[a].n).join(', '));
+    }
+    if (it.t === 'ammo') { const guns = Object.keys(ITEMS).filter(k => ITEMS[k].t === 'weapon' && ITEMS[k].ammo === e.id).map(k => ITEMS[k].n); row('ใช้กับ', guns.join(', ') || '-'); }
+    if (it.t === 'med') { if (it.heal) row('ฟื้นเลือด', `+${it.heal}` + (it.regen ? ` แล้วค่อยๆ ฟื้นอีก ${it.regen}` : '')); if (it.cure) row('ลดการติดเชื้อ', `${it.cure}%`); row('เวลาใช้', it.use ? `${it.use} วิ (โดนตี/วิ่ง/โจมตี = ยกเลิก)` : 'ทันที'); }
+    if (it.t === 'food') { row('อิ่ม', `+${it.food}`); if (it.heal) row('ฟื้นเลือด', `+${it.heal}`); }
+    if (it.t === 'bag' && typeof State !== 'undefined') { const g = State.gridFor(e.id); row('ความจุ', `${g.c}×${g.r} = ${g.c * g.r} ช่อง`); }
+    if (it.v) row('มูลค่า', `ประมาณ ${U.fmt(it.v)} 💵`);
+    return L;
+  },
+  showInfo(e) {
+    this.closeMenu(); this.closeInfo();
+    const it = ITEMS[e.id];
+    const box = U.el('div', { class: 'iteminfo' });
+    box.innerHTML = `<div class="ii-h"><div class="ii-ic">${Art.icon(e.id)}</div><div><b>${it.n}${e.lvl ? ' +' + e.lvl : ''}</b>${e.q > 1 ? ` <span>×${e.q}</span>` : ''}</div></div>` +
+      (it.desc ? `<div class="ii-d">${it.desc}</div>` : '') +
+      `<table>${this.infoLines(e).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table><div class="ii-f">คลิกที่ไหนก็ได้เพื่อปิด</div>`;
+    document.body.appendChild(box); this.info = box;
+    setTimeout(() => { this._infoClose = () => this.closeInfo(); addEventListener('pointerdown', this._infoClose, true); this._infoKey = k => { if (k.code === 'Escape') this.closeInfo(); }; addEventListener('keydown', this._infoKey, true); }, 0);
+  },
+  closeInfo() { if (this.info) { this.info.remove(); this.info = null; } if (this._infoClose) { removeEventListener('pointerdown', this._infoClose, true); removeEventListener('keydown', this._infoKey, true); this._infoClose = null; } },
   closeMenu() { if (this.menu) { this.menu.remove(); this.menu = null; } if (this._close) { removeEventListener('pointerdown', this._close, true); this._close = null; } },
   removeFromSource(src) {
     if (src.remove) { src.remove(); return; }

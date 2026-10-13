@@ -1,6 +1,17 @@
 // ---------- In-run panels: backpack, loot, pause, results ----------
 const UIRun = {
   el() { return document.getElementById('overlay'); },
+  // dropping ammo on a weapon during a run = a normal reload (takes the weapon's reload time), not an instant refill
+  dragReload(i, w, src) {
+    const p = Run.p, wit = ITEMS[w.id], e = src.entry;
+    if (wit.cls === 'melee' || !wit.ammo) { toast('อาวุธนี้ไม่ใช้กระสุน', 'warn'); return; }
+    if (wit.ammo !== e.id) { toast(`${wit.n} ใช้ ${ITEMS[wit.ammo].n} — ไม่ใช่ ${ITEMS[e.id].n}`, 'warn'); return; }
+    if (p.reloadT > 0) { toast('กำลังรีโหลดอยู่', 'warn'); return; }
+    if (src.list !== p.backpack) { toast('เก็บกระสุนเข้าเป้ก่อน แล้วค่อยลากใส่ปืน', 'warn'); return; }
+    if ((w.mag || 0) >= wStats(w, G.char).mag) { toast(`${wit.n} กระสุนเต็มแล้ว`); return; }
+    p.cur = i; Run.reload();
+    if (p.reloadT > 0) { toast(`กำลังรีโหลด ${wit.n}...`); this.close(); }
+  },
   close() { GridUI.closeMenu(); Run.panel = null; this.loot = null; this.sel = null; GridUI.reset(); this.el().innerHTML = ''; this.el().className = ''; },
   update() {
     if (!Run.panel || Run.panel === 'result') return;
@@ -41,9 +52,9 @@ const UIRun = {
     }
   },
   itemMenu(e, ev) {
-    const p = Run.p, it = ITEMS[e.id], acts = [];
+    const p = Run.p, it = ITEMS[e.id], acts = [['ข้อมูล', () => GridUI.showInfo(e)]];
     const re = () => this.render();
-    if (it.t === 'med' || it.t === 'food') acts.push(['ใช้', () => { Run.useItem(e.id); re(); }, 'primary']);
+    if (it.t === 'med' || it.t === 'food') acts.push(['ใช้', () => { Run.useItem(e.id); if (Run.medJob) this.close(); else re(); }, 'primary']);
     if (it.t === 'tool') acts.push(['ซ่อมอาวุธในมือ', () => { Run.startFieldRepair(); this.close(); }, 'primary']);
     if (it.t === 'weapon') acts.push(['ติดตั้งเป็นอาวุธ', () => { this.equip(e, p.backpack); this.sel = null; re(); }, 'primary']);
     if (it.t === 'bag') acts.push([`สวมเป้นี้ (${State.gridFor(e.id).c}×${State.gridFor(e.id).r})`, () => { this.sel = null; const old = Run.equipBag(e, p.backpack); this.loot = old; Run.panel = 'loot'; re(); }, 'primary']);
@@ -71,14 +82,20 @@ const UIRun = {
     p.weapons.forEach((w, i) => {
       let card;
       if (!w) card = U.el('div', { class: 'icard empty' }, U.el('div', { class: 'nm' }, SLOT_LABEL[i]), U.el('div', { class: 'meta' }, 'ลากอาวุธมาวาง'));
-      else card = this.itemCard(w, { cls: i === p.cur ? 'sel' : '', actions: [
-        ['ถือ', () => { p.cur = i; this.render(); }],
-        ['ใส่เป้', () => { if (Inv.addToPack(p.backpack, w, p.grid)) toast('เป้เต็ม', 'warn'); else p.weapons[i] = null; this.render(); }],
-        ['ทิ้ง', () => { p.weapons[i] = null; this.toGround(w); this.render(); }, 'danger'],
-        ...(dur(w) < repairCap(w) ? [['ซ่อม', () => { p.cur = i; if (Run.startFieldRepair(w)) this.close(); else this.render(); }]] : [])] });
+      else {
+        card = this.itemCard(w, { cls: i === p.cur ? 'sel' : '' });
+        card.addEventListener('contextmenu', ev => { ev.preventDefault(); if (GridUI.drag) return;
+          GridUI.ctxMenu(ev, ITEMS[w.id].n, [
+            ['ข้อมูล', () => GridUI.showInfo(w)],
+            ['ถือ', () => { p.cur = i; this.render(); }, 'primary'],
+            ...(dur(w) < repairCap(w) ? [['ซ่อมภาคสนาม', () => { p.cur = i; if (Run.startFieldRepair(w)) this.close(); else this.render(); }]] : []),
+            ['ใส่เป้', () => { if (Inv.addToPack(p.backpack, w, p.grid)) toast('เป้เต็ม', 'warn'); else p.weapons[i] = null; this.render(); }],
+            ['ทิ้ง', () => { p.weapons[i] = null; this.toGround(w); this.render(); }, 'danger']]); });
+        card.addEventListener('click', () => { p.cur = i; this.render(); });
+      }
       if (w) GridUI.makeDraggable(card, { from: 'slot', list: null, entry: w, remove: () => { p.weapons[i] = null; } });
       GridUI.zone(card, src => {
-        const e = src.entry; if (ITEMS[e.id].t === 'ammo' && w) { if (Run.p.reloadT > 0) { toast('กำลังรีโหลดอยู่', 'warn'); return true; } return GridUI.loadAmmo(w, src); }
+        const e = src.entry; if (ITEMS[e.id].t === 'ammo' && w) { this.dragReload(i, w, src); return true; }
         if (ITEMS[e.id].t !== 'weapon' || CLS_SLOT[ITEMS[e.id].cls] !== i) { toast('ช่องนี้ใส่ได้เฉพาะ' + SLOT_LABEL[i], 'warn'); return false; }
         if (src.from === 'slot') return false;
         this.equip(e, src.list || []); return true;
@@ -144,7 +161,7 @@ const UIRun = {
         • <b>A/D</b> เดิน · <b>W/S</b> ปีนบันได · <b>Shift</b> วิ่ง · <b>Z ค้าง</b> ย่อง<br>• เสียง: ย่อง = เงียบและซอมบี้มองเห็นยากขึ้น · เดิน = ซอมบี้ใกล้ ๆ อาจได้ยิน (~40–60%) · วิ่ง / ค้นของ / เปิดปิดประตู = ได้ยินง่าย (60%+)<br>
         • <b>คลิกซ้าย / Space</b> โจมตี (ปืนเล็งเป้าอัตโนมัติไปทางที่หันอยู่) · <b>เมาส์</b> เลือกทิศที่หัน<br>
         • <b>1 2 3</b> สลับอาวุธ · <b>R</b> รีโหลด<br>
-        • <b>ยืนนิ่งใกล้เฟอร์นิเจอร์</b> เพื่อค้นของ · <b>E</b> เปิดดู/ช่วยคน · <b>F</b> เก็บทั้งหมด<br>
+        • <b>Q</b> (หรือ <b>E</b>) ค้นเฟอร์นิเจอร์ — การค้นมีเสียง ขยับ = หยุดค้น · <b>E</b> เปิดดู/ช่วยคน · <b>F</b> เก็บทั้งหมด<br>
         • <b>Tab</b> เปิดเป้<br>
         • <b>จุดอพยพ (แสงสีเขียว)</b> = ยืนรอนับถอยหลังเพื่อกลับฐาน มีที่ถนนฝั่งขวาและลาน ฮ. บนดาดฟ้า<br>• <b>4-9</b> = ปุ่มลัดใช้ไอเทม (จัดเองได้ในเป้ หรือหน้าเตรียมตัวที่ฐาน) · <b>E</b> ที่ประตู = เปิด/ปิด · <b>B ค้าง</b> = เสริมประตู<br>• บอสไม่ต้องสู้ก็ได้ ฆ่าแล้วได้ของดีและกุญแจเข้าพื้นที่หวงห้าม<br>
         • ยิ่งอยู่นาน/ยิงเสียงดัง ระดับอันตรายยิ่งสูง · ถ้าตาย เสียของในเป้และเงินรอบนี้` })),
@@ -177,6 +194,7 @@ const UIRun = {
     }
     lines.push(`ฆ่าซอมบี้: ${r.kills} · ค้นของ: ${r.searchCount} จุด · ระดับอันตรายสูงสุด: ${r.level}`);
     if (r.income) lines.push(`ผู้รอดชีวิตที่ฐานหาเงินมาให้ +${r.income}`);
+    if (r.dayRep && r.dayRep.lines.length) { lines.push(`<b>— เช้าวันที่ ${G.day} —</b>`); lines.push(...r.dayRep.lines); }
     const objHtml = r.objectives.length ? '<div class="objlist">' + r.objectives.map(ob => `<div class="${ob.done ? 'ok' : 'no'}">${ob.done ? '✔' : '✘'} ${ob.label}</div>`).join('') + '</div>' : '';
     const panel = U.el('div', { class: 'panel small result ' + (success ? 'win' : 'lose') },
       U.el('h2', null, title),

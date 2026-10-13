@@ -1,4 +1,25 @@
 // ---------- Developer console: press ` (backquote) or F2, type "help" ----------
+// Running locally (file:// or localhost) it opens straight away. On a public host it asks for a password first;
+// only a PBKDF2 hash lives in js/dev_config.js (written by the deploy workflow from the CONSOLE_PASSWORD secret).
+// With no hash configured the console is disabled on public hosts. Client-side only: it keeps casual players out,
+// it is not real security.
+const DevLock = {
+  local: location.protocol === 'file:' || ['localhost', '127.0.0.1', '::1', '[::1]', ''].includes(location.hostname),
+  KEY: 'dz_dev_unlocked', fails: 0, until: 0,
+  cfg() { return window.DEV_CONSOLE || null; },
+  unlocked() { if (this.local) return true; try { const c = this.cfg(); return !!c && sessionStorage.getItem(this.KEY) === c.hash; } catch (e) { return false; } },
+  async check(pw) {
+    const c = this.cfg(); if (!c || !window.crypto || !crypto.subtle) return false;
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(c.salt), iterations: c.iter }, key, 256);
+    const hex = [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('');
+    if (hex !== c.hash) return false;
+    try { sessionStorage.setItem(this.KEY, c.hash); } catch (e) { }
+    return true;
+  },
+};
+
 const Dev = {
   open: false, god: false, hist: [], hi: -1, log: [],
   init() {
@@ -8,19 +29,21 @@ const Dev = {
     el.appendChild(U.el('div', { class: 'dc-head' }, '⌨ ADMIN CONSOLE'));
     this.sug = U.el('div', { class: 'dc-sug' });
     el.appendChild(this.out); el.appendChild(this.sug); el.appendChild(this.inp);
-    this.inp.addEventListener('input', () => this.suggest());
+    this.inp.addEventListener('input', () => { if (!this.locked) this.suggest(); });
     document.body.appendChild(el);
     // capture phase: runs before the game's own key handlers
     window.addEventListener('keydown', e => {
-      if (e.code === 'Backquote' || e.code === 'F2') { e.preventDefault(); e.stopImmediatePropagation(); this.toggle(); return; }
+      if (e.code === 'Backquote' || e.code === 'F2') { if (!DevLock.local && !DevLock.cfg()) return; e.preventDefault(); e.stopImmediatePropagation(); this.toggle(); return; }
       if (!this.open) return;
       e.stopImmediatePropagation();
       if (e.code === 'Escape') { e.preventDefault(); this.toggle(false); }
       else if (e.code === 'Enter') {
         e.preventDefault();
+        if (this.locked) { const pw = this.inp.value; this.inp.value = ''; if (pw) this.tryUnlock(pw); return; }
         if (this.sugList.length && this.sugI >= 0) { this.pickSug(this.sugI); return; }
         const v = this.inp.value.trim(); this.inp.value = ''; this.suggest(); if (v) { this.hist.unshift(v); this.hi = -1; this.run(v); }
       }
+      else if (this.locked) return;
       else if (e.code === 'ArrowUp') { e.preventDefault(); if (this.sugList.length) { this.sugI = Math.max(0, this.sugI - 1); this.drawSug(); return; } this.hi = Math.min(this.hist.length - 1, this.hi + 1); if (this.hist[this.hi]) this.inp.value = this.hist[this.hi]; }
       else if (e.code === 'ArrowDown') { e.preventDefault(); if (this.sugList.length) { this.sugI = Math.min(this.sugList.length - 1, this.sugI + 1); this.drawSug(); return; } this.hi = Math.max(-1, this.hi - 1); this.inp.value = this.hi >= 0 ? this.hist[this.hi] : ''; }
       else if (e.code === 'Tab') { e.preventDefault(); if (this.sugList.length) this.pickSug(Math.max(0, this.sugI)); else this.complete(); }
@@ -29,7 +52,26 @@ const Dev = {
     // invulnerability hook
     const hurt = Run.hurt;
     Run.hurt = function (dmg, silent) { if (Dev.god) return; return hurt.call(this, dmg, silent); };
-    this.print('พิมพ์ help เพื่อดูคำสั่งทั้งหมด', 'dim');
+    this.setLocked(!DevLock.unlocked());
+  },
+  setLocked(v) {
+    this.locked = v;
+    this.inp.type = v ? 'password' : 'text';
+    this.inp.placeholder = v ? 'ใส่รหัสผ่านแล้วกด Enter · Esc ปิด' : 'พิมพ์คำสั่ง… (help ดูทั้งหมด · Tab เติมคำ · ↑↓ ประวัติ · Esc ปิด)';
+    this.out.innerHTML = '';
+    this.print(v ? '🔒 คอนโซลถูกล็อก — ต้องใส่รหัสผ่านก่อน' : 'พิมพ์ help เพื่อดูคำสั่งทั้งหมด', 'dim');
+  },
+  async tryUnlock(pw) {
+    const now = Date.now();
+    if (now < DevLock.until) { this.print(`ลองใหม่ได้ใน ${Math.ceil((DevLock.until - now) / 1000)} วินาที`, 'err'); return; }
+    if (!window.isSecureContext || !window.crypto || !crypto.subtle) { this.print('ต้องเปิดเกมผ่าน https ถึงจะตรวจรหัสได้', 'err'); return; }
+    this.inp.disabled = true;
+    let ok = false; try { ok = await DevLock.check(pw); } catch (e) { }
+    this.inp.disabled = false; this.inp.focus();
+    if (ok) { DevLock.fails = 0; this.setLocked(false); this.print('🔓 ปลดล็อกแล้ว (จนกว่าจะปิดแท็บ)', 'ok'); return; }
+    DevLock.fails++;
+    if (DevLock.fails >= 5) { DevLock.until = now + 30000 * (DevLock.fails - 4); this.print('รหัสผิดหลายครั้ง — รอ ' + 30 * (DevLock.fails - 4) + ' วินาที', 'err'); }
+    else this.print('รหัสผ่านไม่ถูกต้อง', 'err');
   },
   toggle(v) {
     this.open = v ?? !this.open;
@@ -77,7 +119,7 @@ const Dev = {
     this.out.appendChild(line); while (this.out.children.length > 200) this.out.firstChild.remove();
     this.out.scrollTop = this.out.scrollHeight;
   },
-  refresh() { State.save(); if (!Run.active && typeof UI !== 'undefined' && document.querySelector('#screen.base')) UI.renderBase(); },
+  refresh() { State.save(); if (Run.active && Run.panel && Run.panel !== 'pause' && typeof UIRun !== 'undefined' && UIRun.render) UIRun.render(); if (!Run.active && typeof UI !== 'undefined' && document.querySelector('#screen.base')) UI.renderBase(); },
   inRun() { return Run.active && !Run.over && Run.p; },
   needRun() { if (!this.inRun()) { this.print('ต้องอยู่ในด่าน', 'err'); return false; } return true; },
   needGame() { if (typeof G === 'undefined' || !G) { this.print('ยังไม่มีเซฟ — เริ่มเกมก่อน', 'err'); return false; } return true; },
@@ -122,17 +164,19 @@ const Dev = {
       for (const [id, it] of list.slice(0, 60)) this.print(`${id.padEnd(14)} ${itemEn(id).padEnd(28)} ${it.n}`);
       if (list.length > 60) this.print(`…และอีก ${list.length - 60} รายการ — พิมพ์คำค้นให้แคบลง`, 'dim');
     } },
-    give: { u: '<ไอเทม> [จำนวน]', d: 'เสกไอเทม (ในด่าน=เป้, ที่ฐาน=คลัง)', fn(a) {
+    give: { u: '<ไอเทม> [จำนวน]', d: 'เสกไอเทมเข้าเป้ (เต็ม: ในด่าน=วางพื้น, ที่ฐาน=คลัง)', fn(a) {
       if (!this.needGame()) return;
       const id = this.findItem(a[0]); if (!id) { this.print('ไม่พบไอเทม — ลอง items <คำค้น>', 'err'); return; }
       const n = Math.max(1, parseInt(a[1]) || (ITEMS[id].t === 'ammo' ? 60 : 1)), it = ITEMS[id];
       const make = () => it.t === 'weapon' ? Inv.makeWeapon(id) : { id, q: n };
-      if (this.inRun()) {
-        const p = Run.p;
-        if (it.t === 'weapon') { for (let i = 0; i < n; i++) { const w = make(); if (Inv.addToPack(p.backpack, w, p.grid)) Run.dropBag(p.x, p.f, p.room, [w]); } }
-        else { const left = Inv.addToPack(p.backpack, make(), p.grid); if (left) Run.dropBag(p.x, p.f, p.room, [{ id, q: left }]), this.print(`เป้เต็ม วาง ${left} ชิ้นไว้ที่พื้น`, 'dim'); }
-      } else { if (it.t === 'weapon') for (let i = 0; i < n; i++) Inv.addFree(G.stash, make()); else Inv.addFree(G.stash, make()); }
-      this.print(`✔ ได้ ${it.n} ×${n}`, 'ok'); this.refresh();
+      // in a run: backpack first, the rest dropped at your feet · at base: backpack first, the rest to the stash
+      const inRun = this.inRun(), pack = inRun ? Run.p.backpack : G.backpack, grid = inRun ? Run.p.grid : State.grid();
+      let inPack = 0, out = 0;
+      const overflow = (e) => { if (inRun) Run.dropBag(Run.p.x, Run.p.f, Run.p.room, [e]); else Inv.addFree(G.stash, e); };
+      if (it.t === 'weapon') for (let i = 0; i < n; i++) { const w = make(); if (Inv.addToPack(pack, w, grid)) { overflow(w); out++; } else inPack++; }
+      else { const left = Inv.addToPack(pack, make(), grid) || 0; inPack = n - left; out = left; if (left) overflow({ id, q: left }); }
+      const where = out ? (inRun ? `วางที่พื้น ${out}` : `เข้าคลัง ${out}`) : '';
+      this.print(`✔ ได้ ${it.n} ×${n}` + (inPack ? ` · เข้าเป้ ${inPack}` : '') + (where ? ' · ' + where : ''), 'ok'); this.refresh();
     } },
     money: { u: '<จำนวน>', d: 'เพิ่มเงิน', fn(a) { if (!this.needGame()) return; const n = parseInt(a[0]) || 10000; if (this.inRun()) Run.cash += n; else G.money += n; this.print(`✔ +${n}`, 'ok'); this.refresh(); } },
     heal: { d: 'เลือด/อิ่ม/สตามินาเต็ม ล้างการติดเชื้อ', fn() {
@@ -214,4 +258,5 @@ const Dev = {
     save: { d: 'บันทึกเกม', fn() { if (!this.needGame()) return; State.save(); this.print('✔ บันทึกแล้ว', 'ok'); } },
   },
 };
-window.addEventListener('load', () => Dev.init());
+// don't wait for 'load' (web fonts can delay it for seconds); all game scripts above are already parsed
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => Dev.init()); else Dev.init();
