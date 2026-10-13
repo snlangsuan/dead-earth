@@ -88,7 +88,12 @@ const Run = {
     const rk = opts && opts.restricted, K = rk && KEY_ITEMS[rk];
     const loc = K ? { n: K.zone + ' · ' + stage.n, theme: K.theme } : stage.locs[locIdx];
     const d = stage.gi + (K ? 4 : 0);
-    const seed = U.hash(stageId + ':' + locIdx + ':v1' + (K ? ':' + rk + ':' + Date.now() : ''));
+    // building layout (rooms, their order, floors) per location: kept while you keep dying there,
+    // re-rolled once you get out alive (see endRun)
+    G.layouts = G.layouts || {};
+    this.layoutKey = stageId + ':' + locIdx + (K ? ':' + rk : '');
+    if (G.layouts[this.layoutKey] == null) { G.layouts[this.layoutKey] = U.hash(this.layoutKey + ':' + Date.now() + ':' + Math.random()); State.save(); }
+    const seed = G.layouts[this.layoutKey];
     this.restricted = rk || null;
     if (K) { farm = true; G.keys[rk]--; if (G.keys[rk] <= 0) delete G.keys[rk]; }
     const map = generateLocation(seed, loc.theme, d);
@@ -107,16 +112,18 @@ const Run = {
     const firstW = this.p.weapons.findIndex(w => w);
     this.p.cur = firstW >= 0 ? firstW : 0;
     this.zombies = []; this.bullets = []; this.nades = []; this.acid = []; this.parts = []; this.texts = [];
-    this.cash = 0; this.kills = 0; this.dangerPts = 0; this.level = 1; this.trickleT = 14;
+    this.cash = 0; this.kills = 0; this.dangerPts = Days.worldDanger(); this.level = 1 + Math.floor(this.dangerPts / 45); this.trickleT = 14;
     this.waveT = Math.max(55, 80 - d); this.waveN = 0; this.waveQ = 0; this.waveSpawnT = 0; this.waveActive = 0; this.waveWarned = false; this.chasers = 0;
     this.boss = null; this.bossSpawned = false; this.bossKilled = false;
     this.bossLvl = 5 + Math.floor(d / 10); this.bossKills = 25 + Math.floor(d * 1.2);
     this.retreatT = 0; this.time = 0; this.shake = 0; this.searchCount = 0;
     this.rescued = []; this.survivor = null; this.generator = null; this.powered = false;
-    this.navT = 0; this.hop = []; this.alertT = 0; this.panel = null; this.paused = false;
+    this.navT = 0; this.hop = []; this.alertT = 0; this.panel = null; this.paused = false; this.medJob = null;
     this.locks = []; this.pick = null; this.prevMouse = false; this.bosses = []; this.keyDropped = false; this.extract = null;
     this.traps = []; this.craft = null; this.craftOpen = false; this.trapSel = 0;
     this.barricades = []; this.doorAt = new Map(map.doors.map(d => [d.f + '|' + d.x, d])); this.buildNoiseT = 0; this.msgT = 0;
+    // remember what was packed (non-weapon items) so the base can offer 'pack like last time' after a death
+    G.lastPack = G.backpack.filter(e => ITEMS[e.id].t !== 'weapon' && ITEMS[e.id].t !== 'quest' && ITEMS[e.id].t !== 'key').reduce((acc, e) => { const o = acc.find(x => x.id === e.id); if (o) o.q += e.q; else acc.push({ id: e.id, q: e.q }); return acc; }, []);
     this.objectives = this.makeObjectives();
     this.populate();
     this.assignLocks();
@@ -308,7 +315,14 @@ const Run = {
       }
     }
   },
-  hideSpot() { const fu = this.nearFurn(30); return fu && HIDE_SPOTS[fu.kind] ? fu : null; },
+  hideSpot() {
+    const fu = this.nearFurn(30); if (fu && HIDE_SPOTS[fu.kind]) return fu;
+    // a broken doorway: press into the dark frame
+    const p = this.p, d = this.map.doors.find(d => d.broken && !d.barr && d.f === p.f && Math.abs(d.x - p.x) < 30);
+    if (!d) return null;
+    if (!d.hideSpot) d.hideSpot = { kind: 'brokendoor', x: d.x, f: d.f, w: 30, h: 120, decor: true };
+    return d.hideSpot;
+  },
   tryHide() {
     const p = this.p, fu = this.hideSpot();
     if (p.climb) return;
@@ -345,7 +359,8 @@ const Run = {
   // ---------- update ----------
   update(dt) {
     if (!this.active || this.over) return;
-    if (this.paused) return;
+    // the pause menu (and the result screen) freeze the world; backpack / loot panels only slow it to 20%
+    if (this.paused || this.panel === 'pause' || this.panel === 'result') return;
     dt *= this.panel ? 0.2 : 1;
     this.time += dt;
     const p = this.p, map = this.map;
@@ -419,13 +434,13 @@ const Run = {
     const sneak = (K['KeyZ']) && !p.climb;
     const sprint = !sneak && (K['ShiftLeft'] || K['ShiftRight']) && (p.stam > 1 || p.adren > 0) && mx !== 0;
     p.gait = sneak ? 'sneak' : sprint ? 'run' : 'walk'; p.sneak = sneak;
-    let spd = p.spd * (sneak ? 0.38 : sprint ? 1.45 : 0.7) * (p.adren > 0 ? 1.2 : 1);
+    let spd = p.spd * (sneak ? 0.38 : sprint ? 1.45 : 0.7) * (p.adren > 0 ? 1.2 : 1) * (this.medJob ? 0.5 : 1);
     if (p.dropH) { // landing after letting go of a ladder (or hopping out at the top)
       if (p.dropH > 0) { p.dropV = (p.dropV || 0) + 1800 * dt; p.dropH = Math.max(0, p.dropH - p.dropV * dt); if (!p.dropH) { p.dropV = 0; Snd.step && Snd.step(false); if (this.time - (p.lastDrop || -9) > 0.1) { this.noise(p.x, floorY(p.f), 180); p.lastDrop = this.time; } } }
       else p.dropH = Math.min(0, p.dropH + 400 * dt);
     }
     if (p.climb) {
-      const cs = 210 / FH;
+      const cs = 300 / FH;
       if (up) p.climb.t += cs * dt; else if (down) p.climb.t -= cs * dt;
       if (p.climb.t >= 1) { p.f = p.climb.lad.lo + 1; p.room = p.climb.lad.b; p.climb = null; }
       else if (p.climb.t <= 0) { p.f = p.climb.lad.lo; p.room = p.climb.lad.a; p.climb = null; }
@@ -612,6 +627,12 @@ const Run = {
     const p = this.p, it = ITEMS[id];
     if (!Inv.count(p.backpack, id)) return false;
     const hm = p.mods.heal || 1;
+    // meds take time to apply (adrenaline is instant); the effect lands when the timer finishes
+    if (it.t === 'med' && it.use && !this._applyMed) {
+      if (this.medJob && this.medJob.id === id) return false;
+      this.medJob = { id, t: 0, T: it.use * (p.mods.heal > 1 ? 0.8 : 1) };
+      return false;
+    }
     if (it.t === 'med') {
       if (it.heal) p.hp = Math.min(p.maxHp, p.hp + it.heal * hm);
       if (it.regen) p.regen += it.regen * hm;
@@ -729,9 +750,10 @@ const Run = {
     const p = this.p;
     if (this.over) return;
     p.hp -= dmg;
+    if (!silent && this.medJob) { this.medJob = null; this.popText(p.x, this.yOf(p) - 130, 'การรักษาถูกขัดจังหวะ!', '#ff8a5c'); }
     if (!silent && this.repairJob) { this.repairJob = null; this.popText(p.x, this.yOf(p) - 130, 'การซ่อมถูกขัดจังหวะ', '#ff8a5c'); }
     if (!silent && this.craft) { this.craft = null; this.popText(p.x, this.yOf(p) - 130, 'ประดิษฐ์ถูกขัดจังหวะ', '#ff8a5c'); }
-    if (!silent) { p.searchLock = 0.9; Snd.hurt(); } // getting hit interrupts searching for a moment
+    if (!silent) { p.searchLock = 0.9; p.searchOn = null; Snd.hurt(); } // getting hit interrupts searching for a moment
     if (!silent && this.pick) { this.pick = null; this.popText(p.x, this.yOf(p) - 120, 'ถูกขัดจังหวะ!', '#ff8a5c'); }
     if (!silent && p.build) { p.build = null; this.popText(p.x, this.yOf(p) - 120, 'ถูกขัดจังหวะ!', '#ff8a5c'); }
     if (!silent) { p.hurtT = 0.3; this.retreatT = 0; this.shake = Math.max(this.shake, 4); this.blood(p.x, this.yOf(p) - 45, 5); }
@@ -821,7 +843,7 @@ const Run = {
       if (z.atkCd <= 0) { z.atkCd = 1.1; this.hitBarricade(bb, z); }
       return;
     }
-    if (Math.abs(dxp) < z.rad + 18 && Math.abs(dyp) < 48 && !p.hidden && !this.barrBetween(z.f, z.x, p.x)) {
+    if (Math.abs(dxp) < z.rad + 18 && Math.abs(dyp) < (p.climb && !z.climb ? 24 : 48) && !p.hidden && !this.barrBetween(z.f, z.x, p.x)) {
       z.run = 0.35;
       z.facing = Math.sign(dxp) || z.facing;
       if (z.atkCd <= 0) {
@@ -1015,16 +1037,27 @@ const Run = {
     this.searching = null;
     if (p.searchLock > 0) { p.searchLock -= dt; return; }
     if (this.panel || p.climb || p.hidden) return;
+    // searching is noisy, so it only starts when the player asks for it ([Q], or [E] when nothing else is there);
+    // moving / attacking stops it (progress so far is kept)
     const fu = this.nearFurn(22);
-    if (!fu || fu.searched || !fu.loot || fu.lock) return;
-    const busy = p.moving || Input.mouse.down || Input.keys['Space'];
-    if (busy) return;
+    if (Input.hit('KeyQ') && fu && this.canSearch(fu)) p.searchOn = fu;
+    if (!p.searchOn) return;
+    if (p.searchOn !== fu || !this.canSearch(fu) || p.moving || Input.mouse.down || Input.keys['Space']) { p.searchOn = null; return; }
     fu.prog += dt / this.searchTime(fu); Snd.rummage();
     this.searching = fu;
     p.searchNoiseT = (p.searchNoiseT || 0) - dt;
     if (p.searchNoiseT <= 0) { p.searchNoiseT = 1.0; this.noise(p.x, this.yOf(p), 260, U.rf(Math.random, 0.6, 0.8)); }
-    if (fu.prog >= 1) this.completeSearch(fu);
+    if (fu.prog >= 1) { this.completeSearch(fu); p.searchOn = null; }   // each pass (and each deeper pass) needs a new press
   },
+  // applying a med: walking is allowed (half speed); running, attacking, climbing or getting hit cancels it
+  updateMed(dt) {
+    const j = this.medJob, p = this.p; if (!j) return;
+    const cancel = p.climb || p.hidden || p.gait === 'run' || Input.mouse.down || Input.keys['Space'] || !Inv.count(p.backpack, j.id);
+    if (cancel) { this.medJob = null; this.popText(p.x, this.yOf(p) - 110, 'ยกเลิกการรักษา', '#aaa'); return; }
+    j.t += dt;
+    if (j.t >= j.T) { this.medJob = null; this._applyMed = true; try { this.useItem(j.id); } finally { this._applyMed = false; } }
+  },
+  canSearch(fu) { return !!fu && !!fu.loot && !fu.searched && !fu.lock; },
   // each further pass through the same furniture takes longer (digging deeper)
   searchTime(fu) {
     const base = fu.kind === 'supply' ? 2.4 : fu.w > 100 ? 2.0 : 1.5;
@@ -1061,8 +1094,11 @@ const Run = {
       toast(`ช่วย ${this.survivorName(sv.who)} แล้ว! จะไปรอที่ฐานถ้าคุณกลับไปอย่างปลอดภัย`, 'good');
       return;
     }
-    const lt = this.lockTarget();
-    if (lt) { this.startPick(lt); return; }
+    const lt = this.lockTarget(), dr0 = this.doorNear();
+    // standing at a door next to a locked cabinet/car: the closer one gets the E press
+    const doorCloser = dr0 && lt && lt.fu && Math.abs(dr0.x - p.x) < Math.abs(lt.fu.x - p.x) - lt.fu.w / 2 + 4;
+    if (lt && !doorCloser) { this.startPick(lt); return; }
+    if (doorCloser) { this.toggleDoor(dr0); return; }
     const fu = this.nearFurn(30);
     if (fu && fu.kind === 'generator' && !this.powered) {
       if (Inv.count(p.backpack, 'fuse')) {
@@ -1075,8 +1111,10 @@ const Run = {
       return;
     }
     if (fu && fu.items && fu.items.length) { UIRun.openLoot(fu); return; }
+    // a door right here wins over searching (searching also has its own key, Q)
     const dr = this.doorNear();
     if (dr) { this.toggleDoor(dr); return; }
+    if (fu && this.canSearch(fu) && this.nearFurn(22) === fu) { p.searchOn = fu; return; }
     UIRun.openInventory();
   },
   takeAllNearby() {
@@ -1200,16 +1238,53 @@ const Run = {
       fu.lock = { tier, hp: tier * 70 + (fu.kind === 'safe' ? 260 : 0) }; fu.lock.max = fu.lock.hp;
       // precision locks can't be pried open — lockpick only
       fu.lock.pickOnly = fu.kind === 'safe' || tier >= 3 || (fu.kind === 'weaponrack' && tier >= 2) || r() < 0.25;
+      if (fu.forced) fu.lock.pickOnly = false;   // containers holding a required item can always be pried open
     }
-    // shops and secure rooms sit behind locked doors
+    // interior doors come in four kinds:
+    //   normal  - just a door, open/close with E
+    //   broken  - an open gap: hide in the dark frame (H) or board it up (B)
+    //   locked  - pick (E, lockpick) or pry open (F, loud)
+    //   secure  - lockpick only
+    // secure rooms lean towards locks; required objectives always stay reachable without a lockpick
     const SEC = { shop: 1, pharmacy: 1, clothing: 1, office: 1, electronics: 2, security: 2, lab: 2 };
     for (const d of map.doors) {
       const a = map.rooms[d.a], b = map.rooms[d.b];
-      if (a.outdoor || b.outdoor || a.id === map.start || b.id === map.start) continue;
-      const t = SEC[a.type] || SEC[b.type];
-      if (!t || r() >= 0.4) continue;
-      const lk = { kind: 'door', lock: true, x: d.x, f: d.f, tier: Math.min(3, t + (r() < 0.25 ? 1 : 0)), hp: 260, max: 260, hitT: 0 };
-      lk.pickOnly = lk.tier >= 3 || (t >= 2 && r() < 0.5);
+      d.kindT = 'normal';
+      if (a.outdoor && b.outdoor) continue;
+      if (a.outdoor || b.outdoor || a.id === map.start || b.id === map.start) { if (r() < 0.15) d.kindT = 'broken'; continue; }
+      const t = SEC[a.type] || SEC[b.type] || 0;
+      const roll = r(), pLock = t ? 0.38 : 0.16, pSecure = t >= 2 ? 0.2 : t ? 0.1 : 0.05;
+      if (roll < pSecure) d.kindT = 'secure';
+      else if (roll < pSecure + pLock) d.kindT = 'locked';
+      else if (roll < pSecure + pLock + 0.18) d.kindT = 'broken';
+    }
+    // keep required rooms (survivor, quest/fuse containers, generator) reachable without lockpicks
+    const need = new Set();
+    if (this.survivor) need.add(this.survivor.room);
+    for (const rm of map.rooms) for (const fu of rm.furn) if ((fu.forced && !fu.keyHere) || fu === this.generator) need.add(rm.id);
+    const reach = () => {
+      const seen = new Set([map.start]), q = [map.start];
+      while (q.length) {
+        const id = q.shift();
+        const nb = [...map.doors.filter(d => d.kindT !== 'secure' && (d.a === id || d.b === id)).map(d => d.a === id ? d.b : d.a),
+                    ...(map.ladders || []).filter(l => l.a === id || l.b === id).map(l => l.a === id ? l.b : l.a)];
+        for (const n of nb) if (!seen.has(n)) { seen.add(n); q.push(n); }
+      }
+      return seen;
+    };
+    for (let guard = 0; guard < 20; guard++) {
+      const seen = reach(), miss = [...need].filter(id => !seen.has(id));
+      if (!miss.length) break;
+      const d = map.doors.find(d => d.kindT === 'secure' && (seen.has(d.a) !== seen.has(d.b)));
+      if (!d) break;
+      d.kindT = 'locked';
+    }
+    for (const d of map.doors) {
+      if (d.kindT === 'broken') { d.startBroken = true; continue; }
+      if (d.kindT !== 'locked' && d.kindT !== 'secure') continue;
+      const t = SEC[map.rooms[d.a].type] || SEC[map.rooms[d.b].type] || 1;
+      const lk = { kind: 'door', lock: true, x: d.x, f: d.f, tier: d.kindT === 'secure' ? Math.max(2, Math.min(3, t + 1)) : Math.min(2, t), hp: 260, max: 260, hitT: 0 };
+      lk.pickOnly = d.kindT === 'secure';
       d.lk = lk; this.locks.push(lk);
     }
   },
@@ -1380,6 +1455,7 @@ const Run = {
     this.over = true;
     const p = this.p;
     G.stats.extracts++; Snd.victory();
+    if (G.layouts) delete G.layouts[this.layoutKey];   // survived: the next visit gets a new layout
     // quest items are delivered, not kept
     const learned = [];
     G.keys = G.keys || {};
@@ -1422,13 +1498,18 @@ const Run = {
   finishCommon() {
     this.active = false;
     G.day++;
-    // daily base life: generic survivors scavenge, base rest heals
+    // daily base life (js/days.js): upkeep first — short supplies cancel the rest heal and halve income
+    const rep = this.dayRep = Days.upkeep();
     const generic = G.survivors.filter(s => !s.role).length;
-    this.income = generic * 25;
+    this.income = Math.round(Days.income() * (rep.short ? 0.5 : 1));
     G.money += this.income;
     const cs = G.chars[G.char];
-    cs.hp = Math.min(CHARACTERS[G.char].hp, cs.hp + Math.round(CHARACTERS[G.char].hp * 0.3));
+    if (!rep.short || Days.built('clinic')) cs.hp = Math.min(CHARACTERS[G.char].hp, cs.hp + Math.round(CHARACTERS[G.char].hp * Days.healPct()));
     State.restock();
+    Days.event(rep);
+    Days.afterDay(rep);
+    const prevLvl = 1 + Math.floor(Math.min(90, Math.max(0, G.day - 2) * 1.5) / 45);
+    if (Days.worldLevel() > prevLvl) rep.lines.push(`<span class="w">☠ โลกอันตรายขึ้น — ทุกด่านเริ่มที่ระดับอันตราย ${Days.worldLevel()}</span>`);
     State.save();
   },
 };

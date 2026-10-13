@@ -6,38 +6,20 @@
 <title>Dead Earth — โลกหลังวันสิ้นโลก</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Chakra+Petch:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/theme.css">
+<script>
+// cache-busting: always load the current game files (a stale cached script mixed with new ones breaks features)
+window.BUILD = Date.now();
+for (const h of ['css/style.css', 'css/theme.css']) document.write('<link rel="stylesheet" href="' + h + '?v=' + BUILD + '">');
+</script>
 </head>
 <body>
 <canvas id="game"></canvas>
 <div id="screen"></div>
 <div id="overlay"></div>
 <div id="toast"></div>
-<script src="js/util.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/data_items.js"></script>
-<script src="js/data_chars.js"></script>
-<script src="js/data_world.js"></script>
-<script src="js/state.js"></script>
-<script src="js/mapgen.js"></script>
-<script src="js/game.js"></script>
-<script src="assets/sprites/manifest.js"></script>
-<script src="js/art.js"></script>
-<script src="js/render.js"></script>
-<script src="js/render_room.js"></script>
-<script src="js/traps.js"></script>
-<script src="js/doors.js"></script>
-<script src="js/extract.js"></script>
-<script src="js/keys.js"></script>
-<script src="js/bags.js"></script>
-<script src="js/durability.js"></script>
-<script src="js/menu_fx.js"></script>
-<script src="js/ui_grid.js"></script>
-<script src="js/ui_run.js"></script>
-<script src="js/ui_base.js"></script>
-<script src="js/item_names_en.js"></script>
-<script src="js/console.js"></script>
-<script src="js/main.js"></script>
+<script>
+// scripts load in this order (document.write keeps them synchronous and ordered)
+['js/util.js','js/audio.js','js/data_items.js','js/data_chars.js','js/data_world.js','js/state.js','js/mapgen.js','js/game.js','assets/sprites/manifest.js','js/art.js','js/render.js','js/render_room.js','js/traps.js','js/doors.js','js/extract.js','js/keys.js','js/days.js','js/bags.js','js/durability.js','js/menu_fx.js','js/ui_grid.js','js/ui_run.js','js/ui_base.js','js/item_names_en.js','js/dev_config.js','js/console.js','js/main.js'].forEach(src => document.write('<script src="' + src + '?v=' + BUILD + '"><\/script>'));
+</script>
 </body>
 </html>

@@ -6,16 +6,16 @@ const ITEMS = {
   knife:    { n: 'มีดพก', t: 'weapon', cls: 'melee', icon: '🔪', sz: 1, st: 1, v: 80, tier: 0, dmg: 20, rate: 0.32, range: 50, arc: 1.2, kb: 60, desc: 'เบา เร็ว ใช้ได้ตลอด' },
   bat:      { n: 'ไม้เบสบอล', t: 'weapon', cls: 'melee', icon: '🏏', sz: 2, st: 1, v: 160, tier: 0, dmg: 32, rate: 0.6, range: 62, arc: 1.6, kb: 150, desc: 'ตีกระเด็น วงกว้าง' },
   machete:  { n: 'มีดมาเชเต้', t: 'weapon', cls: 'melee', icon: '🗡️', sz: 2, st: 1, v: 450, tier: 1, dmg: 44, rate: 0.48, range: 64, arc: 1.4, kb: 90, desc: 'คมและเร็ว' },
-  fireaxe:  { n: 'ขวานดับเพลิง', t: 'weapon', cls: 'melee', icon: '🪓', sz: 3, st: 1, v: 750, tier: null, dmg: 80, rate: 0.85, range: 66, arc: 1.5, kb: 220, desc: 'หนัก ทรงพลัง (หาได้ในด่านเท่านั้น)' },
+  fireaxe:  { n: 'ขวานดับเพลิง', t: 'weapon', cls: 'melee', icon: '🪓', sz: 3, st: 1, v: 750, tier: 2, dmg: 80, rate: 0.85, range: 66, arc: 1.5, kb: 220, desc: 'หนัก ทรงพลัง' },
   katana:   { n: 'คาตานะ', t: 'weapon', cls: 'melee', icon: '⚔️', sz: 3, st: 1, v: 1600, tier: null, dmg: 66, rate: 0.4, range: 76, arc: 1.8, kb: 110, desc: 'ดาบในตำนาน (หาได้ในด่านเท่านั้น)' },
   // Sidearms
   pistol:   { n: 'ปืนพก 9มม.', t: 'weapon', cls: 'pistol', icon: '🔫', sz: 2, st: 1, v: 320, tier: 0, ammo: 'a9', dmg: 24, rate: 0.26, mag: 12, reload: 1.2, spread: 0.05, spd: 950, range: 650, noise: 560, desc: 'ปืนพื้นฐาน' },
-  revolver: { n: 'ลูกโม่ .44', t: 'weapon', cls: 'pistol', icon: '🔫', sz: 2, st: 1, v: 950, tier: null, ammo: 'a44', dmg: 64, rate: 0.55, mag: 6, reload: 2.0, spread: 0.03, spd: 1150, range: 760, noise: 760, pierce: 1, desc: 'แรงมาก ทะลุ 1 ตัว (หาได้ในด่านเท่านั้น)' },
+  revolver: { n: 'ลูกโม่ .44', t: 'weapon', cls: 'pistol', icon: '🔫', sz: 2, st: 1, v: 950, tier: 2, ammo: 'a44', dmg: 64, rate: 0.55, mag: 6, reload: 2.0, spread: 0.03, spd: 1150, range: 760, noise: 760, pierce: 1, desc: 'แรงมาก ทะลุ 1 ตัว' },
   // Primaries
   smg:      { n: 'ปืนกลมือ', t: 'weapon', cls: 'primary', icon: '🔫', sz: 3, st: 1, v: 1300, tier: 1, ammo: 'a9', auto: true, dmg: 17, rate: 0.085, mag: 30, reload: 1.8, spread: 0.13, spd: 950, range: 600, noise: 640, desc: 'ยิงรัว ใช้กระสุน 9มม.' },
   shotgun:  { n: 'ลูกซอง', t: 'weapon', cls: 'primary', icon: '🔫', sz: 4, st: 1, v: 1650, tier: 1, ammo: 'a12', dmg: 15, pellets: 8, rate: 0.85, mag: 6, reload: 2.4, spread: 0.32, spd: 850, range: 380, noise: 820, desc: 'ระยะใกล้ทำลายล้าง' },
   crossbow: { n: 'หน้าไม้', t: 'weapon', cls: 'primary', icon: '🏹', sz: 3, st: 1, v: 1150, tier: 2, ammo: 'bolt', dmg: 95, rate: 1.0, mag: 1, reload: 0.9, spread: 0.015, spd: 900, range: 700, noise: 60, pierce: 2, desc: 'เงียบสนิท ทะลุ 2 ตัว' },
-  rifle:    { n: 'ปืนไรเฟิลจู่โจม', t: 'weapon', cls: 'primary', icon: '🔫', sz: 4, st: 1, v: 2900, tier: null, ammo: 'a556', auto: true, dmg: 32, rate: 0.11, mag: 30, reload: 2.0, spread: 0.06, spd: 1250, range: 860, noise: 860, desc: 'อเนกประสงค์ (หาในด่าน/ช่างสร้าง)' },
+  rifle:    { n: 'ปืนไรเฟิลจู่โจม', t: 'weapon', cls: 'primary', icon: '🔫', sz: 4, st: 1, v: 2900, tier: 3, ammo: 'a556', auto: true, dmg: 32, rate: 0.11, mag: 30, reload: 2.0, spread: 0.06, spd: 1250, range: 860, noise: 860, desc: 'อเนกประสงค์' },
   sniper:   { n: 'ปืนซุ่มยิง', t: 'weapon', cls: 'primary', icon: '🎯', sz: 5, st: 1, v: 4200, tier: null, ammo: 'a762', dmg: 160, rate: 1.25, mag: 5, reload: 2.8, spread: 0.008, spd: 1800, range: 1300, noise: 1000, pierce: 4, desc: 'นัดเดียวจอด ทะลุ 4 ตัว (หาได้ในด่านเท่านั้น)' },
   // Ammo
   a9:   { n: 'กระสุน 9มม.', t: 'ammo', icon: '🟨', sz: 1, st: 60, v: 2, tier: 0, pack: 30 },
@@ -32,7 +32,7 @@ const ITEMS = {
   pack_duffel:   { n: 'กระเป๋าดัฟเฟิล', t: 'bag', grid: [6, 3], icon: '👜', sz: 1, st: 1, v: 1100, tier: null, desc: 'กระเป๋ายาว 6×3 ช่อง — หาได้ในด่านเท่านั้น' },
   pack_military: { n: 'เป้ทหาร', t: 'bag', grid: [5, 5], icon: '🎒', sz: 1, st: 1, v: 2600, tier: null, desc: 'เป้ทหาร 5×5 ช่อง — หาได้ยาก ในคลังอาวุธ/กล่องเสบียง' },
   pack_raid:     { n: 'เป้จู่โจมยุทธวิธี', t: 'bag', grid: [6, 5], icon: '🎒', sz: 1, st: 1, v: 4500, tier: null, desc: 'เป้ใหญ่ที่สุด 6×5 ช่อง — หายากมาก บอสอาจทิ้งไว้' },
-  repairkit: { n: 'ชุดซ่อมอาวุธ', t: 'tool', icon: '🧰', sz: 1, st: 5, v: 140, tier: 1, desc: 'ใช้ซ่อมอาวุธในด่าน: ชุดซ่อม 1 + เศษเหล็ก 2 (อาวุธประชิด) หรือ ชุดซ่อม 1 + ชิ้นส่วนปืน 1 + เศษเหล็ก 1 (ปืน) ยืนนิ่ง 4 วิ มีเสียง ซ่อม +40% (วิศวกร +60% และเร็วกว่า)' },
+  repairkit: { n: 'ชุดซ่อมอาวุธ', t: 'tool', icon: '🧰', sz: 1, st: 5, v: 140, tier: 0, desc: 'ใช้ซ่อมอาวุธในด่าน: ชุดซ่อม 1 + เศษเหล็ก 2 (อาวุธประชิด) หรือ ชุดซ่อม 1 + ชิ้นส่วนปืน 1 + เศษเหล็ก 1 (ปืน) ยืนนิ่ง 4 วิ มีเสียง ซ่อม +40% (วิศวกร +60% และเร็วกว่า)' },
   grenade: { n: 'ระเบิดมือ', t: 'throw', icon: '💣', sz: 1, st: 3, v: 260, tier: 2, desc: 'ตั้งไว้ที่ปุ่มลัด (4–9) แล้วกดเพื่อขว้าง' },
   pipebomb: { n: 'ระเบิดท่อ', t: 'throw', icon: '🧨', sz: 1, st: 4, v: 150, tier: 1, desc: 'ตั้งไว้ที่ปุ่มลัด (4–9) แล้วกดเพื่อขว้าง แรงน้อยกว่าระเบิดมือเล็กน้อย' },
   spiketrap: { n: 'กับดักตะปู', t: 'throw', icon: '📌', sz: 1, st: 4, v: 80, tier: 1, trap: true, desc: 'ตั้งไว้ที่ปุ่มลัด (4–9) แล้วกดเพื่อวางที่พื้น ซอมบี้ที่เดินผ่านจะช้าลงและเสียเลือดต่อเนื่อง' },
@@ -58,10 +58,10 @@ const ITEMS = {
   mre:    { n: 'เสบียงทหาร MRE', t: 'food', icon: '🍱', sz: 1, st: 3, v: 160, tier: null, food: 80, heal: 10 },
   stew:   { n: 'สตูว์ร้อน', t: 'food', icon: '🍲', sz: 1, st: 3, v: 200, tier: null, food: 100, heal: 25 },
   // Meds
-  bandage:    { n: 'ผ้าพันแผล', t: 'med', icon: '🩹', sz: 1, st: 10, v: 30, tier: 0, heal: 20 },
-  pills:      { n: 'ยาแก้ปวด', t: 'med', icon: '💊', sz: 1, st: 10, v: 65, tier: 0, heal: 8, regen: 30 },
-  medkit:     { n: 'ชุดปฐมพยาบาล', t: 'med', icon: '⛑️', sz: 2, st: 3, v: 260, tier: 1, heal: 70 },
-  antiviral:  { n: 'ยาต้านไวรัส', t: 'med', icon: '💉', sz: 1, st: 5, v: 620, tier: null, cure: 60 },
+  bandage:    { n: 'ผ้าพันแผล', t: 'med', icon: '🩹', sz: 1, st: 10, v: 30, tier: 0, heal: 20, use: 2 },
+  pills:      { n: 'ยาแก้ปวด', t: 'med', icon: '💊', sz: 1, st: 10, v: 65, tier: 0, heal: 8, regen: 30, use: 0.8 },
+  medkit:     { n: 'ชุดปฐมพยาบาล', t: 'med', icon: '⛑️', sz: 2, st: 3, v: 260, tier: 1, heal: 70, use: 4 },
+  antiviral:  { n: 'ยาต้านไวรัส', t: 'med', icon: '💉', sz: 1, st: 5, v: 620, tier: null, cure: 60, use: 1.5 },
   adrenaline: { n: 'อะดรีนาลีน', t: 'med', icon: '⚡', sz: 1, st: 3, v: 420, tier: null, heal: 30, adren: 12 },
   // Valuables
   watch:   { n: 'นาฬิกาทอง', t: 'val', icon: '⌚', sz: 1, st: 5, v: 350, tier: null },

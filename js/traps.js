@@ -130,18 +130,25 @@ Object.assign(R, {
   },
   drawCraftUI(run) {
     const ctx = this.ctx, W = this.W, H = this.H, p = run.p;
+    if (run.medJob) {
+      const j = run.medJob, bw = 220, bx = W / 2 - bw / 2, by = H * 0.6;
+      ctx.fillStyle = 'rgba(10,12,14,0.8)'; ctx.fillRect(bx - 12, by - 30, bw + 24, 52);
+      ctx.fillStyle = '#fff'; ctx.font = '600 14px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(`ใช้${ITEMS[j.id].n}`, W / 2, by - 10);
+      ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(bx, by, bw, 8); ctx.fillStyle = '#6fff8f'; ctx.fillRect(bx, by, bw * Math.min(1, j.t / j.T), 8);
+    }
     if (run.repairJob) {
       const j = run.repairJob, bw = 240, bx = W / 2 - bw / 2, by = H * 0.6;
       ctx.fillStyle = 'rgba(10,12,14,0.8)'; ctx.fillRect(bx - 12, by - 30, bw + 24, 52);
       ctx.fillStyle = '#fff'; ctx.font = '600 14px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(`กำลังซ่อม ${ITEMS[j.w.id].n}... (ยืนนิ่ง · มีเสียง)`, W / 2, by - 10);
+      ctx.fillText(`ซ่อม${ITEMS[j.w.id].n}`, W / 2, by - 10);
       ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(bx, by, bw, 8); ctx.fillStyle = '#7fe08a'; ctx.fillRect(bx, by, bw * Math.min(1, j.t / j.T), 8);
     }
     if (run.craft) {
       const c = run.craft, bw = 220, bx = W / 2 - bw / 2, by = H * 0.6;
       ctx.fillStyle = 'rgba(10,12,14,0.8)'; ctx.fillRect(bx - 12, by - 30, bw + 24, 52);
       ctx.fillStyle = '#fff'; ctx.font = '600 14px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(`กำลังประดิษฐ์ ${ITEMS[c.rc.id].n}... (ยืนนิ่ง)`, W / 2, by - 10);
+      ctx.fillText(`ประดิษฐ์${ITEMS[c.rc.id].n}`, W / 2, by - 10);
       ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(bx, by, bw, 8); ctx.fillStyle = '#ffb34a'; ctx.fillRect(bx, by, bw * Math.min(1, c.t / c.T), 8);
     }
     if (!run.craftOpen) return;

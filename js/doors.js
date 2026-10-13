@@ -12,7 +12,8 @@ Object.assign(Run, {
   initDoors() {
     const map = this.map, r = Math.random;
     for (const d of map.doors) {
-      Object.assign(d, { kind: 'door', isDoor: true, lvl: 0, max: DOOR_HP[0], hp: DOOR_HP[0], hitT: 0, closed: false, broken: false });
+      Object.assign(d, { kind: 'door', isDoor: true, lvl: 0, max: DOOR_HP[0], hp: DOOR_HP[0], hitT: 0, closed: false, broken: !!d.startBroken });
+      if (d.broken) { d.hp = 0; continue; }
       const a = map.rooms[d.a], b = map.rooms[d.b];
       if (!d.lk && !(a.outdoor && b.outdoor) && r() < 0.35) this.setDoor(d, true, true);
     }
@@ -57,7 +58,7 @@ Object.assign(Run, {
     this.noise(d.x, y, 520);
   },
   doorPlan(d) {
-    if (d.broken) return { act: 'fix', cost: { plank: 3, nails: 3 }, time: 3, label: 'ติดตั้งประตูใหม่' };
+    if (d.broken) return { act: 'fix', cost: { plank: 2, nails: 2 }, time: 2.6, label: 'ตอกไม้ปิดช่องประตู' };
     if (d.hp < d.max * 0.75) return { act: 'repair', cost: { plank: 1, nails: 1 }, time: 1.6, label: 'ซ่อมประตู' };
     if (d.lvl === 0) return { act: 'up', lvl: 1, cost: { plank: 2, nails: 2 }, time: 2.2, label: 'ตอกไม้เสริมประตู (ระดับ 1)' };
     if (d.lvl === 1) return { act: 'up', lvl: 2, cost: { scrap: 3, nails: 2 }, time: 2.8, label: 'บุแผ่นเหล็ก (ระดับ 2)' };
@@ -65,7 +66,7 @@ Object.assign(Run, {
     return null;
   },
   applyDoorPlan(d, plan) {
-    if (plan.act === 'fix') { d.broken = false; d.lvl = 0; d.max = DOOR_HP[0]; d.hp = d.max; }
+    if (plan.act === 'fix') { d.broken = false; d.lvl = 0; d.max = DOOR_HP[0]; d.hp = d.max; this.setDoor(d, true, true); }   // boarded shut
     else if (plan.act === 'up') { d.lvl = plan.lvl; d.max = DOOR_HP[d.lvl]; d.hp = d.max; }
     else d.hp = Math.min(d.max, d.hp + d.max * 0.5);
   },

@@ -45,6 +45,7 @@ Object.assign(Run, {
   updateExtract(dt) {
     this.checkKeyPickup();
     this.updateFieldRepair(dt);
+    this.updateMed(dt);
     this.cleanBags();
     const ex = this.exitAt();
     if (!ex) {
@@ -96,7 +97,7 @@ Object.assign(R, {
     ctx.fillStyle = 'rgba(8,20,12,0.85)'; ctx.fillRect(bx - 14, by - 40, bw + 28, 70);
     ctx.strokeStyle = '#6dff9a'; ctx.lineWidth = 2; ctx.strokeRect(bx - 14, by - 40, bw + 28, 70);
     ctx.fillStyle = '#9dffb8'; ctx.font = '700 16px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(`กำลังอพยพ (${e.ex.n}) — อยู่ในพื้นที่อีก ${left.toFixed(1)} วิ`, W / 2, by - 14);
+    ctx.fillText(`อพยพ ${left.toFixed(1)} วิ`, W / 2, by - 14);
     ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(bx, by, bw, 12);
     ctx.fillStyle = '#6dff9a'; ctx.fillRect(bx, by, bw * Math.min(1, e.t / e.T), 12);
   },

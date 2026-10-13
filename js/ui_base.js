@@ -136,10 +136,12 @@ const UI = {
     GridUI.reset();
     const s = this.scr(); s.className = 'show base'; s.innerHTML = ''; MenuFX.mode = 'base'; Music.setMode('base');
     const ch = CHARACTERS[G.char], cs = G.chars[G.char];
-    const chip = (cls, icon, txt) => { const d = U.el('div', { class: 'chip ' + cls }); d.innerHTML = icon; d.appendChild(document.createTextNode(txt)); return d; };
+    const chip = (cls, icon, txt, tip) => { const d = U.el('div', { class: 'chip ' + cls }); d.innerHTML = icon; d.appendChild(document.createTextNode(txt)); if (tip) d.title = tip; return d; };
+    const dl = Days.daysLeft(), evN = { merchant: '🧳 พ่อค้าเร่', raid: '🧟 ถูกบุก', wanderer: '🚶 มีคนแวะ', rain: '🌧 ฝนตก', boom: '💰 ตลาดคึกคัก' }[G.dayEvent];
     const top = U.el('div', { class: 'topbar' },
       U.el('div', { class: 'brand' }, 'DEAD EARTH'),
-      chip('', UI_ICONS.day, `วันที่ ${G.day}`),
+      chip('', UI_ICONS.day, `วันที่ ${G.day}` + (Days.worldLevel() > 1 ? ` · ☠${Days.worldLevel()}` : '') + (evN ? ` · ${evN}` : ''), `ทุกครั้งที่กลับฐานผ่านไป 1 วัน\nโลกอันตรายขึ้นตามวัน: ด่านเริ่มที่ระดับอันตราย ${Days.worldLevel()}\nบางวันมีเหตุการณ์สุ่ม (พ่อค้าเร่ ฝูงซอมบี้บุก ฯลฯ)`),
+      chip(G.day <= GRACE_DAYS ? '' : dl < 2 ? 'warn' : '', Art.icon('canned'), G.day <= GRACE_DAYS ? `เสบียง (ตั้งตัว)` : `เสบียง ${dl} วัน`, `ฐานมี ${Days.mouths()} คน · ใช้อาหาร ${Days.needFood()} หน่วย + น้ำ ${Days.needWater()} ขวด ต่อวัน (จากคลัง)\nขาด = ไม่ได้พักฟื้น รายได้ลดครึ่ง และหิว 3 วันติดผู้รอดชีวิตจะหนี` + (G.day <= GRACE_DAYS ? `\nเริ่มใช้เสบียงหลังวันที่ ${GRACE_DAYS}` : '')),
       chip('money', Art.icon('cash'), U.fmt(G.money)),
       chip('', UI_ICONS.heart, `${ch.n} · ${cs.hp}/${ch.hp}` + (cs.inf ? ` · ☣ ${cs.inf}%` : '')),
       chip('', UI_ICONS.surv, `ผู้รอดชีวิต ${G.survivors.length + G.unlockedChars.length - 1}`),
@@ -152,7 +154,16 @@ const UI = {
       b.innerHTML = UI_ICONS[k]; b.appendChild(document.createTextNode(label)); tabs.appendChild(b);
     }
     const body = U.el('div', { class: 'tbody' });
-    s.append(top, tabs, body);
+    s.append(top, tabs);
+    for (const c of Days.pending()) {
+      const dl = Days.daysLeftWith(1, c);
+      s.appendChild(U.el('div', { class: 'recruit' },
+        U.el('span', { class: 'ri' }, '👤'),
+        U.el('div', { class: 'rt' }, U.el('b', null, `${c.name} ขอเข้าร่วมฐาน`), U.el('small', null, `${c.how} · นิสัย: ${Days.traitTxt(c)} · ถ้ารับ เสบียงจะพอ ~${dl} วัน (ฐาน ${Days.mouths() + 1} คน)`)),
+        U.el('button', { class: 'btn small primary', onclick: () => { Days.accept(c); toast(`${c.name} เข้าร่วมฐานแล้ว`, 'good'); State.save(); this.renderBase(); } }, 'รับเข้าฐาน'),
+        U.el('button', { class: 'btn small', onclick: () => { Days.refuse(c); toast(`ปฏิเสธ ${c.name}`); State.save(); this.renderBase(); } }, 'ปฏิเสธ')));
+    }
+    s.appendChild(body);
     ({ map: () => this.renderMap(body), load: () => this.renderLoadout(body), shop: () => this.renderShop(body), craft: () => this.renderWorkshop(body), surv: () => this.renderSurv(body), chars: () => this.renderChars(body) })[this.tab]();
   },
 
@@ -266,7 +277,7 @@ const UI = {
           U.el('div', { class: 'lname' }, U.el('span', null, c || isCur || lockT ? l.n : '??? (ยังไม่เปิดเผย)'), c || isCur ? U.el('small', null, THEMES[l.theme].n) : null),
           lockT ? U.el('div', { class: 'lockhint' }, `ต้องใช้ ${ITEMS[lockT.id].n} — ${KeyGraph.where(lockT)}`) : null,
           (c || isCur) && pend.length ? U.el('div', { class: 'keyhint' }, '🔑 มีคีย์ที่นี่: ' + pend.map(t => `${ITEMS[t.id].n} (${t.src.method === 'boss' ? 'บอส' : 'ภารกิจ'})`).join(', ')) : null,
-          c ? U.el('button', { class: 'btn small', onclick: () => { if (bad) { toast('จัดเป้ใหม่ก่อน', 'warn'); return; } Run.start(st.id, li, true); } }, 'เล่นซ้ำ') : null);
+          c ? U.el('button', { class: 'btn small', onclick: () => { if (bad) { toast('จัดเป้ใหม่ก่อน', 'warn'); return; } this.preflight(() => Run.start(st.id, li, true)); } }, 'เล่นซ้ำ') : null);
       })));
     const cs = G.chars[G.char], used = Inv.used(G.backpack), cap = State.cap();
     const bad = !Inv.valid(G.backpack, State.grid());
@@ -275,10 +286,10 @@ const UI = {
     if (!G.weapons.some(Boolean)) warn.push('คุณไม่มีอาวุธติดตัว!');
     if (cs.hp < CHARACTERS[G.char].hp * 0.4) warn.push(`เลือดเหลือน้อย (${cs.hp}) — ใช้ยาหรือให้หมอรักษาก่อน`);
     if (cs.inf > 50) warn.push(`ติดเชื้อ ${cs.inf}% — อันตราย!`);
+    for (const m of this.packGaps()) warn.push(m);
     const go = (farm) => {
       if (bad) { toast('จัดเป้ใหม่ก่อน', 'warn'); this.tab = 'load'; this.renderBase(); return; }
-      if (farm) Run.start(st.id, Math.floor(Math.random() * st.locs.length), true);
-      else Run.start(st.id, cur, false);
+      this.preflight(() => { if (farm) Run.start(st.id, Math.floor(Math.random() * st.locs.length), true); else Run.start(st.id, cur, false); });
     };
     const btns = U.el('div', { class: 'gobtns' });
     if (!done && cur == null) btns.appendChild(U.el('div', { class: 'note warn' }, '🔒 location ที่เหลือล็อกอยู่ทั้งหมด — ต้องหาคีย์ตามที่บอกไว้ด้านบนก่อน'));
@@ -290,7 +301,7 @@ const UI = {
       btns.appendChild(U.el('button', { class: 'btn big restricted', title: 'อันตรายกว่าปกติ ของดีกว่า บอสมาเร็วและอาจมีหลายตัว', onclick: () => {
         if (bad) { toast('จัดเป้ใหม่ก่อน', 'warn'); return; }
         if (!confirm(`ใช้ ${K.n} 1 ใบ เพื่อเข้า "${K.zone}"?\nอันตรายกว่าปกติมาก แต่ของดีกว่า (ไม่นับเป็นการผ่าน location)`)) return;
-        Run.start(st.id, cur ?? 0, true, { restricted: kid });
+        this.preflight(() => Run.start(st.id, cur ?? 0, true, { restricted: kid }));
       } }, `🗝 เข้าพื้นที่หวงห้าม: ${K.zone} (มี ${n})`));
     }
     side.appendChild(U.el('div', { class: 'brief' },
@@ -305,7 +316,7 @@ const UI = {
   repairActs(w) {
     const c = repairCost(w); if (!c) return [];
     if (c.none) return [['ซ่อมไม่ได้แล้ว', () => toast(`${ITEMS[w.id].n} ซ่อมมา ${w.rep} ครั้งแล้ว ซ่อมต่อไม่ได้ — ใช้จนพังหรือขายทิ้ง`, 'warn'), 'danger']];
-    return [[`ซ่อม→${c.cap}% 🔩${c.scrap} 💵${c.money}`, () => {
+    return [[`ซ่อม → ${c.cap}% (เศษเหล็ก ${c.scrap} · 💵${c.money})`, () => {
       if (Inv.count(G.stash, 'scrap') < c.scrap || G.money < c.money) { toast(`ต้องใช้เศษเหล็ก ${c.scrap} ในคลัง และเงิน ${c.money}`, 'warn'); return; }
       Inv.remove(G.stash, 'scrap', c.scrap); G.money -= c.money; applyRepair(w);
       Snd.hammer && Snd.hammer(); toast(`ซ่อม ${ITEMS[w.id].n} เป็น ${w.dur}% แล้ว${repairCap(w) > 0 ? ` (ครั้งหน้าซ่อมได้สูงสุด ${repairCap(w)}%)` : ' — ซ่อมครั้งสุดท้ายแล้ว'}`, 'good'); State.save(); this.renderBase();
@@ -324,7 +335,7 @@ const UI = {
       return f === 'all' || (f === 'weapon' && t === 'weapon') || (f === 'ammo' && (t === 'ammo' || t === 'throw')) || (f === 'med' && (t === 'med' || t === 'food')) || (f === 'mat' && (t === 'mat' || t === 'part' || t === 'attach')) || (f === 'val' && t === 'val');
     };
     stashCol.appendChild(U.el('h3', null, 'คลังของที่ฐาน'));
-    stashCol.appendChild(U.el('div', { class: 'hint' }, 'ลากของไปวางในเป้ หรือกด "ใส่เป้" ให้จัดที่ให้อัตโนมัติ · ลากของจากเป้กลับมาที่นี่เพื่อคืนคลัง'));
+    stashCol.appendChild(U.el('div', { class: 'hint' }, 'ลากของไปวางในเป้ · Shift+ลาก = แบ่งครึ่ง · Ctrl+ลาก = หยิบ 1 ชิ้น · ลากจากเป้กลับมาที่นี่เพื่อคืนคลัง'));
     stashCol.appendChild(U.el('div', { class: 'filters' }, ...filters.map(([k, l]) => U.el('button', { class: 'chipbtn' + (this.stashFilter === k ? ' on' : ''), onclick: () => { this.stashFilter = k; this.renderBase(); } }, l))));
     GridUI.zone(stashCol, src => { if (src.from === 'grid' || src.from === 'slot') { GridUI.removeFromSource(src); Inv.addFree(G.stash, src.entry); return true; } return false; });
     const sg = U.el('div', { class: 'grid' });
@@ -332,27 +343,18 @@ const UI = {
     const list = G.stash.filter(fmatch);
     if (!list.length) sg.appendChild(U.el('div', { class: 'emptytxt' }, 'ไม่มีของ'));
     for (const e of list) {
-      const it = ITEMS[e.id], acts = [];
-      const toPack = (n) => {
-        const part = it.t === 'weapon' ? e : { id: e.id, q: Math.min(n, e.q) };
-        const left = Inv.addToPack(G.backpack, part, g);
-        const moved = (it.t === 'weapon' ? 1 : part.q) - left;
-        if (moved <= 0) { toast('เป้เต็ม! จัดเป้ใหม่หรือเอาของออกก่อน', 'warn'); return; }
-        if (it.t === 'weapon') G.stash.splice(G.stash.indexOf(e), 1); else Inv.remove(G.stash, e.id, moved);
-        State.save(); this.renderBase();
-      };
-      if (it.t === 'weapon') acts.push(['ติดตั้ง', () => { const slot = CLS_SLOT[it.cls]; const old = G.weapons[slot]; G.stash.splice(G.stash.indexOf(e), 1); G.weapons[slot] = e; if (old) Inv.addFree(G.stash, old); this.renderBase(); }, 'good']);
-      if (it.t !== 'quest') { if (e.q > 1) acts.push(['+1', () => toPack(1)]); acts.push([e.q > 1 ? 'ใส่เป้' : 'ใส่เป้', () => toPack(e.q)]); }
-      if (it.t === 'med' && (it.heal || it.cure)) acts.push(['ใช้เลย', () => this.useAtBase(e.id)]);
+      const it = ITEMS[e.id], acts = [['ข้อมูล', () => GridUI.showInfo(e)]];
+      if (it.t === 'med' && (it.heal || it.cure)) acts.push(['ใช้เลย', () => this.useAtBase(e.id), 'primary']);
       if (it.t === 'weapon') acts.push(...this.repairActs(e));
-      if (it.t === 'bag') acts.unshift([`สวม (${State.gridFor(e.id).c}×${State.gridFor(e.id).r})`, () => {
+      if (it.t === 'bag') acts.push([`สวม (${State.gridFor(e.id).c}×${State.gridFor(e.id).r})`, () => {
         // at base the old bag and its contents simply go back to the stash
         const old = G.bag || 'pack_day';
         for (const x of G.backpack) { const c = { ...x }; delete c.gx; delete c.gy; delete c.rot; Inv.addFree(G.stash, c); }
         G.backpack = []; Inv.remove(G.stash, e.id, 1); Inv.addFree(G.stash, { id: old, q: 1 }); G.bag = e.id;
         toast(`สวม${it.n}แล้ว — ของในเป้เก่าย้ายกลับเข้าคลัง`, 'good'); State.save(); this.renderBase();
       }, 'good']);
-      const card = UIRun.itemCard(e, { actions: acts });
+      const card = UIRun.itemCard(e, {});
+      card.addEventListener('contextmenu', ev => { ev.preventDefault(); if (!GridUI.drag && !GridUI.splitDown) GridUI.ctxMenu(ev, it.n + (e.q > 1 ? ' ×' + e.q : ''), acts); });
       GridUI.makeDraggable(card, { from: 'ext', list: G.stash, entry: e });
       sg.appendChild(card);
     }
@@ -365,7 +367,12 @@ const UI = {
     G.weapons.forEach((w, i) => {
       let card;
       if (!w) card = U.el('div', { class: 'icard empty' }, U.el('div', { class: 'nm' }, SLOT_LABEL[i]), U.el('div', { class: 'meta' }, 'ลากอาวุธมาวาง'));
-      else { card = UIRun.itemCard(w, { actions: [['ถอดเก็บคลัง', () => { G.weapons[i] = null; Inv.addFree(G.stash, w); this.renderBase(); }], ...this.repairActs(w)] }); GridUI.makeDraggable(card, { from: 'slot', entry: w, remove: () => { G.weapons[i] = null; } }); }
+      else {
+        card = UIRun.itemCard(w, {});
+        card.addEventListener('contextmenu', ev => { ev.preventDefault(); if (GridUI.drag) return;
+          GridUI.ctxMenu(ev, ITEMS[w.id].n, [['ข้อมูล', () => GridUI.showInfo(w)], ...this.repairActs(w), ['ถอดออก (เก็บคลัง)', () => { G.weapons[i] = null; Inv.addFree(G.stash, w); State.save(); this.renderBase(); }, 'danger']]); });
+        GridUI.makeDraggable(card, { from: 'slot', entry: w, remove: () => { G.weapons[i] = null; } });
+      }
       GridUI.zone(card, src => {
         const e = src.entry, it = ITEMS[e.id];
         if (it.t === 'ammo' && w) { GridUI.loadAmmo(w, src); State.save(); return true; }
@@ -377,11 +384,11 @@ const UI = {
       wrow.appendChild(card);
     });
     right.appendChild(wrow);
-    right.appendChild(U.el('div', { class: 'capline' }, `🎒 ${ITEMS[G.bag || 'pack_day'].n} · ${g.c}×${g.r} = ${cap} block · ใช้ไป ${used} block · เปลี่ยนเป้ได้จากคลัง (ปุ่ม "สวม")`));
+    right.appendChild(U.el('div', { class: 'capline' }, `🎒 ${ITEMS[G.bag || 'pack_day'].n} · ${g.c}×${g.r} = ${cap} block · ใช้ไป ${used} block · เปลี่ยนเป้: คลิกขวาที่กระเป๋าในคลัง → สวม`));
     right.appendChild(U.el('div', { class: 'hint' }, 'อาวุธที่ถือไม่กินที่เป้ · ระหว่างลาก กด R หรือคลิกขวาเพื่อหมุน · ยิ่งพกของเยอะ ที่ว่างไว้เก็บของในด่านยิ่งน้อย · ถ้าตาย ของในเป้หายหมด'));
     const gridWrap = U.el('div', { class: 'gridcol' });
     const baseMenu = (e, ev) => {
-      const it = ITEMS[e.id], acts = [], re = () => { State.save(); this.renderBase(); };
+      const it = ITEMS[e.id], acts = [['ข้อมูล', () => GridUI.showInfo(e)]], re = () => { State.save(); this.renderBase(); };
       if (it.t === 'med' && (it.heal || it.cure)) acts.push(['ใช้เลย', () => { this.useAtBase(e.id); }, 'primary']);
       if (it.t === 'bag') acts.push([`สวมเป้นี้`, () => { const old = G.bag || 'pack_day'; G.backpack.splice(G.backpack.indexOf(e), 1); for (const x of G.backpack) { const c = { ...x }; delete c.gx; delete c.gy; delete c.rot; Inv.addFree(G.stash, c); } G.backpack = []; Inv.addFree(G.stash, { id: old, q: 1 }); G.bag = e.id; toast(`สวม${it.n}แล้ว — ของในเป้เก่าย้ายกลับเข้าคลัง`, 'good'); re(); }, 'primary']);
       if (it.gw !== it.gh) acts.push(['หมุน', () => { if (Inv.fits(G.backpack, g, e, e.gx, e.gy, e.rot ? 0 : 1, e)) e.rot = e.rot ? 0 : 1; else toast('หมุนไม่ได้ ที่ไม่พอ', 'warn'); re(); }]);
@@ -404,10 +411,42 @@ const UI = {
       U.el('button', { class: 'btn small', onclick: () => { for (const x of G.backpack) Inv.addFree(G.stash, x); G.backpack = []; this.renderBase(); } }, 'คืนทั้งหมดเข้าคลัง'),
       U.el('button', { class: 'btn small', onclick: () => { Inv.reflow(G.backpack, g); this.renderBase(); } }, 'จัดเรียงให้แน่น'),
       U.el('button', { class: 'btn small', onclick: () => this.autoPack() }, 'จัดเป้อัตโนมัติ'),
-      U.el('button', { class: 'btn primary small', onclick: () => { this.tab = 'map'; this.renderBase(); } }, 'ไปแผนที่ →')));
+      G.lastPack && G.lastPack.length ? U.el('button', { class: 'btn small', onclick: () => { this.repack(); this.renderBase(); } }, 'จัดเหมือนรอบที่แล้ว') : null));
     wrap.append(stashCol, right);
     body.appendChild(wrap);
     State.save();
+  },
+  // what the backpack is missing that usually decides a run
+  packGaps() {
+    const has = t => G.backpack.some(e => ITEMS[e.id].t === t), out = [];
+    if (!has('med')) out.push('ไม่มียาในเป้ — โดนกัดแล้วรักษาตัวไม่ได้');
+    if (!Inv.count(G.backpack, 'lockpick')) out.push('ไม่มีกิ๊บสะเดาะในเป้ — ประตู/ตู้ที่ล็อกนิรภัยจะเปิดไม่ได้');
+    return out;
+  },
+  // ask before leaving with an under-packed bag (items are lost on death, so this is easy to forget)
+  preflight(goFn) {
+    const gaps = this.packGaps();
+    if (!gaps.length) { goFn(); return; }
+    const o = document.getElementById('overlay'); o.className = 'show'; o.innerHTML = '';
+    const close = () => { o.className = ''; o.innerHTML = ''; };
+    o.appendChild(U.el('div', { class: 'panel small' },
+      U.el('h2', null, 'เป้ยังขาดของจำเป็น'),
+      U.el('div', { class: 'lines' }, ...gaps.map(g => U.el('div', null, '⚠ ' + g))),
+      U.el('div', { class: 'row' },
+        G.lastPack && G.lastPack.length ? U.el('button', { class: 'btn primary', onclick: () => { close(); this.repack(); this.tab = 'load'; this.renderBase(); } }, 'จัดเหมือนรอบที่แล้ว') : null,
+        U.el('button', { class: 'btn', onclick: () => { close(); this.tab = 'load'; this.renderBase(); } }, 'ไปจัดเป้'),
+        U.el('button', { class: 'btn danger', onclick: () => { close(); goFn(); } }, 'ออกเลย'))));
+  },
+  // refill the backpack with what was carried at the start of the last run (taken from the stash, as far as it goes)
+  repack() {
+    const g = State.grid(); let miss = 0;
+    for (const e of G.lastPack || []) {
+      const have = Inv.count(G.stash, e.id) - 0, inPack = Inv.count(G.backpack, e.id), want = Math.max(0, e.q - inPack);
+      const n = Math.min(want, have); if (!n) { if (want) miss++; continue; }
+      const left = Inv.addToPack(G.backpack, { id: e.id, q: n }, g) || 0;
+      Inv.remove(G.stash, e.id, n - left); if (left || n < want) miss++;
+    }
+    toast(miss ? 'จัดเป้แล้ว (ของบางอย่างในคลังไม่พอ)' : 'จัดเป้เหมือนรอบที่แล้ว', miss ? 'warn' : 'good'); State.save();
   },
   autoPack() {
     const g = State.grid(), cap = State.cap();
@@ -437,7 +476,7 @@ const UI = {
   renderShop(body) {
     const wrap = U.el('div', { class: 'shop' });
     wrap.appendChild(U.el('div', { class: 'shophead' },
-      U.el('div', null, U.el('h3', null, 'ร้านค้าของฐาน'), U.el('div', { class: 'hint' }, `สินค้าเปลี่ยนทุกครั้งที่กลับจากด่าน · ระดับร้าน ${State.shopTier()}` + (G.roles.merchant ? ' · เจ๊มาลีช่วยต่อราคา' : ' · ของหายากบางอย่างหาได้ในด่านเท่านั้น'))),
+      U.el('div', null, U.el('h3', null, 'ร้านค้าของฐาน'), U.el('div', { class: 'hint' }, `สินค้าเปลี่ยนทุกครั้งที่กลับจากด่าน · ระดับร้าน ${State.shopTier()} · ราคาขึ้นลงตามการซื้อขายและเงินที่มี` + (State.wealthMult() > 1.02 ? ` (เงินเยอะ ร้านโก่งราคา +${Math.round((State.wealthMult() - 1) * 100)}%)` : '') + (G.roles.merchant ? ' · เจ๊มาลีช่วยต่อราคา' : ' · ของหายากบางอย่างหาได้ในด่านเท่านั้น'))),
       U.el('div', { class: 'seg' },
         U.el('button', { class: this.shopMode === 'buy' ? 'on' : '', onclick: () => { this.shopMode = 'buy'; this.renderBase(); } }, 'ซื้อ'),
         U.el('button', { class: this.shopMode === 'sell' ? 'on' : '', onclick: () => { this.shopMode = 'sell'; this.renderBase(); } }, 'ขาย'))));
@@ -445,13 +484,13 @@ const UI = {
     if (this.shopMode === 'buy') {
       for (const s of G.shop.stock) {
         const it = ITEMS[s.id], pack = it.t === 'ammo' ? (it.pack || 10) : 1;
-        const price = State.buyPrice(s.id) * pack;
+        const p1 = State.buyPrice(s.id), price = p1 * pack, tr = State.priceTrend(s.id, p1);
         const can = s.q > 0 && G.money >= price;
-        grid.appendChild(U.el('div', { class: 'scard' + (s.q ? '' : ' sold') },
+        grid.appendChild(U.el('div', { class: 'scard' + (s.q ? '' : ' sold') + (s.wander ? ' wander' : '') },
           U.el('div', { class: 'ic', html: Art.icon(s.id) }),
-          U.el('div', { class: 'info' }, U.el('b', null, it.n + (pack > 1 ? ` ×${pack}` : '')), U.el('small', null, TYPE_LABEL[it.t] + (it.desc ? ' · ' + it.desc : '') + this.weaponBrief(it)), U.el('small', { class: 'own' }, `มีอยู่: ${Inv.count(G.stash, s.id) + Inv.count(G.backpack, s.id)} · เหลือในร้าน ${s.q}`)),
+          U.el('div', { class: 'info' }, U.el('b', null, it.n + (pack > 1 ? ` ×${pack}` : '') + (s.wander ? ' 🧳' : '')), U.el('small', null, TYPE_LABEL[it.t] + (it.desc ? ' · ' + it.desc : '') + this.weaponBrief(it)), U.el('small', { class: 'own' }, `มีอยู่: ${Inv.count(G.stash, s.id) + Inv.count(G.backpack, s.id)} · เหลือในร้าน ${s.q}`), this.trendTag(tr, true)),
           U.el('button', { class: 'btn small ' + (can ? 'primary' : ''), disabled: !can ? 'disabled' : null, onclick: () => {
-            if (!can) return; G.money -= price; s.q--;
+            if (!can) return; G.money -= price; s.q--; State.noteBuy(s.id, pack);
             if (it.t === 'blueprint') { if (!G.blueprints.includes(it.bp)) G.blueprints.push(it.bp); toast(`เรียนรู้ ${it.n} แล้ว! ไปประกอบได้ที่โรงช่าง`, 'good'); }
             else { Inv.addFree(G.stash, Inv.make(s.id, pack)); toast(`ซื้อ ${it.n} แล้ว (อยู่ในคลัง)`); }
             State.save(); this.renderBase();
@@ -462,18 +501,25 @@ const UI = {
       const list = G.stash.filter(e => ITEMS[e.id].t !== 'quest');
       if (!list.length) grid.appendChild(U.el('div', { class: 'emptytxt' }, 'คลังว่าง'));
       for (const e of list) {
-        const it = ITEMS[e.id], p1 = State.sellPrice(e.id);
-        const sell = (n) => { const q = it.t === 'weapon' ? 1 : Math.min(n, e.q); if (it.t === 'weapon') G.stash.splice(G.stash.indexOf(e), 1); else Inv.remove(G.stash, e.id, q); G.money += p1 * q; State.save(); this.renderBase(); };
+        const it = ITEMS[e.id], p1 = State.sellPrice(e.id, e), all = e.q > 1 ? State.sellTotal(e.id, e, e.q) : p1;
+        const tr = Math.round((p1 / Math.max(1, ITEMS[e.id].v * (G.roles.merchant ? 0.55 : 0.4)) - 1) * 100);
+        const sell = (n) => { const q = it.t === 'weapon' ? 1 : Math.min(n, e.q), got = State.sellTotal(e.id, e, q); if (it.t === 'weapon') G.stash.splice(G.stash.indexOf(e), 1); else Inv.remove(G.stash, e.id, q); G.money += got; State.noteSell(e.id, q); State.save(); this.renderBase(); };
         grid.appendChild(U.el('div', { class: 'scard' + (it.t === 'val' ? ' val' : '') },
           U.el('div', { class: 'ic', html: Art.icon(e.id) }),
-          U.el('div', { class: 'info' }, U.el('b', null, it.n + (e.q > 1 ? ` ×${e.q}` : '') + (e.lvl ? ' +' + e.lvl : '')), U.el('small', null, `${TYPE_LABEL[it.t]} · ขายได้ ${p1}/ชิ้น`)),
+          U.el('div', { class: 'info' }, U.el('b', null, it.n + (e.q > 1 ? ` ×${e.q}` : '') + (e.lvl ? ' +' + e.lvl : '')), U.el('small', null, `${TYPE_LABEL[it.t]} · ขายได้ ${p1}/ชิ้น` + (it.t === 'weapon' && (e.dur ?? 100) < 100 ? ` · สภาพ ${Math.round(e.dur ?? 100)}%` : '')), this.trendTag(tr, false)),
           U.el('div', { class: 'btncol' },
             U.el('button', { class: 'btn small', onclick: () => sell(1) }, `ขาย 1 (+${p1})`),
-            e.q > 1 ? U.el('button', { class: 'btn small primary', onclick: () => sell(e.q) }, `ขายหมด (+${U.fmt(p1 * e.q)})`) : null)));
+            e.q > 1 ? U.el('button', { class: 'btn small primary', onclick: () => sell(e.q) }, `ขายหมด (+${U.fmt(all)})`) : null)));
       }
     }
     wrap.appendChild(grid);
     body.appendChild(wrap);
+  },
+  // price vs normal: buying → up is bad (red); selling → down is bad (red)
+  trendTag(pct, buying) {
+    if (Math.abs(pct) < 3) return null;
+    const bad = buying ? pct > 0 : pct < 0;
+    return U.el('small', { class: 'trend ' + (bad ? 'bad' : 'good') }, `${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}% จากราคาปกติ`);
   },
   weaponBrief(it) {
     if (it.t !== 'weapon') return '';
@@ -509,10 +555,30 @@ const UI = {
       grid.appendChild(card);
     }
     wrap.appendChild(grid);
-    const gen = G.survivors.filter(s => !s.role);
-    wrap.appendChild(U.el('div', { class: 'generic' }, U.el('h4', null, `ผู้รอดชีวิตทั่วไป (${gen.length})`),
-      U.el('div', null, gen.length ? gen.map(s => s.name).join(', ') : '— ยังไม่มี —'),
-      U.el('small', null, `ออกหาเสบียงให้ทุกวัน: +${gen.length * 25} 💵 ต่อรอบ`)));
+    const gen = G.survivors.filter(s => !s.role), W = gen.length;
+    wrap.appendChild(U.el('div', { class: 'generic' }, U.el('h4', null, `แรงงาน: ผู้รอดชีวิตทั่วไป (${W})`),
+      W ? U.el('div', { class: 'glist' }, ...gen.map(sv => U.el('span', { class: 'gp', title: Days.traitTxt(sv) },
+        `${sv.name}${sv.trait && sv.trait !== 'normal' ? ' · ' + TRAITS[sv.trait].n : ''}${sv.trait === 'weak' && (sv.until || 0) > G.day ? ` (พักอีก ${sv.until - G.day} วัน)` : ''}`,
+        U.el('button', { class: 'gx', title: 'ให้ออกจากฐาน (ลดคนกินเสบียง)', onclick: () => { Days.dismiss(sv); toast(`${sv.name} ออกจากฐานแล้ว`); State.save(); this.renderBase(); } }, '✕'))))
+        : U.el('div', null, '— ยังไม่มี — ช่วยคนจากในด่าน หรือสร้างเสาวิทยุเพื่อเรียกคนมา'),
+      U.el('div', { class: 'wf' },
+        U.el('span', null, `💵 หาเงิน +${Days.income()}/วัน`),
+        U.el('span', null, `🔨 งานสร้าง ${Days.workPerDay()} แต้ม/วัน`),
+        U.el('span', null, `❤ พักฟื้น ${Math.round(Days.healPct() * 100)}%/วัน`),
+        U.el('span', { class: Days.daysLeft() < 2 && G.day > GRACE_DAYS ? 'warn' : '' }, `🍽 ทั้งฐาน ${Days.mouths()} คน กิน ${Days.needFood()} หน่วย + น้ำ ${Days.needWater()} ขวด/วัน`)),
+      U.el('small', null, 'คนยิ่งเยอะ งานยิ่งเสร็จเร็ว แต่กินเสบียงมากขึ้น — ถ้าขาดแคลนหลายวัน คนจะทยอยออกจากฐาน')));
+    // base projects
+    const pj = Days.proj(), box = U.el('div', { class: 'projects' }, U.el('h4', null, 'โครงการฐาน'));
+    if (pj.cur) { const P = PROJECTS[pj.cur.id]; box.appendChild(U.el('div', { class: 'pcur' }, U.el('b', null, `${P.icon} กำลังสร้าง ${P.n}`), U.el('div', { class: 'pbar' }, U.el('i', { style: `width:${Math.min(100, pj.cur.done / P.work * 100)}%` })), U.el('small', null, `${Math.floor(pj.cur.done)}/${P.work} แต้มงาน · เสร็จในอีก ~${Days.daysToFinish()} วัน (กลับฐาน 1 ครั้ง = 1 วัน)`))); }
+    for (const [id, P] of Object.entries(PROJECTS)) {
+      const done = Days.built(id), ok = Days.canStart(id);
+      const costTxt = Object.entries(P.cost).map(([k, q]) => `${ITEMS[k].n} ${q}(${Inv.count(G.stash, k)})`).join(' · ');
+      box.appendChild(U.el('div', { class: 'proj' + (done ? ' done' : '') },
+        U.el('span', { class: 'pi' }, P.icon),
+        U.el('div', { class: 'pinfo' }, U.el('b', null, P.n + (done ? ' ✓' : '')), U.el('small', null, P.desc), done ? null : U.el('small', { class: 'cost' }, `${costTxt} · งาน ${P.work} แต้ม (~${Math.ceil(P.work / Days.workPerDay())} วัน)`)),
+        done ? U.el('small', { class: 'good' }, 'สร้างแล้ว') : U.el('button', { class: 'btn small' + (ok ? ' primary' : ''), disabled: ok ? null : 'disabled', title: pj.cur ? 'สร้างได้ทีละโครงการ' : '', onclick: () => { if (Days.startProject(id)) { toast(`เริ่มสร้าง ${P.n}`, 'good'); State.save(); this.renderBase(); } } }, pj.cur && pj.cur.id === id ? 'กำลังสร้าง' : 'เริ่มสร้าง')));
+    }
+    wrap.appendChild(box);
     body.appendChild(wrap);
   },
   roleServices(k, card) {
