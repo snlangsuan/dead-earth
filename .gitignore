@@ -1,0 +1,7 @@
+.DS_Store
+_to_delete/
+# raw Gemini outputs (~450 MB) — regenerate with assets/gen_gemini.py; only assets/sprites is used by the game
+assets/gemini/
+__pycache__/
+*.pyc
+.env
