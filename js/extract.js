@@ -123,23 +123,26 @@ const QuickUI = {
   strip(pool, rerender) {
     const qs = Run.quickSlots();
     const wrap = U.el('div', { class: 'quickedit' });
-    wrap.appendChild(U.el('div', { class: 'qhead' }, U.el('b', null, '⚡ ปุ่มลัด (กด 4–9 ระหว่างเล่น)'),
-      U.el('span', { class: 'hint' }, ' คลิกช่องเพื่อเลือกไอเทม · ลากไอเทมมาวางที่ช่องได้ · ‹ › สลับตำแหน่ง'),
-      U.el('button', { class: 'btn small ghost', onclick: () => { G.quick = QUICK_KEYS.map(() => null); State.save(); rerender(); } }, 'ล้างทั้งหมด')));
+    const head = U.el('div', { class: 'qhead', title: 'ลากยา/อาหาร/ระเบิดมาวาง · ลากออกเพื่อล้าง' }, U.el('b', null, '⚡ ปุ่มลัด'), U.el('span', { class: 'qkeys' }, 'กด 4–9'));
+    head.addEventListener('contextmenu', ev => { ev.preventDefault(); GridUI.ctxMenu(ev, 'ปุ่มลัด', [['ล้างทั้งหมด', () => { G.quick = QUICK_KEYS.map(() => null); State.save(); rerender(); }, 'danger']]); });
+    wrap.appendChild(head);
     const row = U.el('div', { class: 'qslots' });
     const counts = Object.fromEntries(pool().map(o => [o.id, o.n]));
     qs.forEach((id, i) => {
       const it = id && ITEMS[id], n = id ? (counts[id] || 0) : 0;
-      const slot = U.el('div', { class: 'qslot' + (id ? '' : ' empty') + (n || !id ? '' : ' out') + (this.pick === i ? ' on' : ''), onclick: () => { this.pick = this.pick === i ? null : i; rerender(); } },
+      const togglePick = () => { this.pick = this.pick === i ? null : i; rerender(); };
+      const slot = U.el('div', { class: 'qslot' + (id ? '' : ' empty') + (n || !id ? '' : ' out') + (this.pick === i ? ' on' : ''), onclick: id ? null : togglePick },
         U.el('span', { class: 'qk' }, String(i + 4)),
         (() => { const q = U.el('span', { class: 'qi' }); if (it) q.innerHTML = Art.icon(id); else q.textContent = '＋'; return q; })(),
         U.el('span', { class: 'qn' }, it ? it.n : 'ว่าง'),
-        U.el('span', { class: 'qc' }, it ? '×' + n : ''),
-        U.el('span', { class: 'qmv' },
-          U.el('button', { class: 'mini', title: 'เลื่อนซ้าย', onclick: ev => { ev.stopPropagation(); if (i > 0) { [qs[i - 1], qs[i]] = [qs[i], qs[i - 1]]; State.save(); rerender(); } } }, '‹'),
-          U.el('button', { class: 'mini', title: 'ล้างช่อง', onclick: ev => { ev.stopPropagation(); qs[i] = null; State.save(); rerender(); } }, '✕'),
-          U.el('button', { class: 'mini', title: 'เลื่อนขวา', onclick: ev => { ev.stopPropagation(); if (i < qs.length - 1) { [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]]; State.save(); rerender(); } } }, '›')));
+        U.el('span', { class: 'qc' }, it ? '×' + n : ''));
+      if (id) {
+        // drag a bound slot onto another slot to swap them, or off the bar to clear it
+        GridUI.makeDraggable(slot, { from: 'quick', qi: i, entry: { id, q: 1 }, onNowhere: () => { qs[i] = null; State.save(); } }, togglePick);
+        slot.addEventListener('contextmenu', ev => { ev.preventDefault(); GridUI.ctxMenu(ev, it.n, [['ข้อมูล', () => GridUI.showInfo({ id, q: n })], ['ล้างช่อง', () => { qs[i] = null; State.save(); rerender(); }, 'danger']]); });
+      }
       GridUI.zone(slot, src => {
+        if (src.from === 'quick') { if (src.qi !== i) { [qs[src.qi], qs[i]] = [qs[i], qs[src.qi]]; State.save(); } return true; }
         const e = src.entry;
         if (!e || !quickable(e.id)) { toast('ช่องลัดใส่ได้เฉพาะ ยา อาหาร ระเบิด และกับดัก', 'warn'); return false; }
         const j = qs.indexOf(e.id); if (j >= 0 && j !== i) qs[j] = qs[i]; // already bound elsewhere: swap

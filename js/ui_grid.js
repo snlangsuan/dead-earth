@@ -6,13 +6,14 @@ const GridUI = {
 
   itemInner(e, w, h) {
     const it = ITEMS[e.id];
-    const qty = it.t === 'weapon' ? (it.mag != null ? `${e.mag}/${it.mag}` : '') : (e.q > 1 ? e.q : '');
+    const qty = it.t === 'weapon' ? (it.mag != null ? `${e.mag}/${attMagCap(e)}` : '') : (e.q > 1 ? e.q : '');
     const big = Math.min(w, h) * this.CELL * 0.62;
     const ic = WEAPON_ART[e.id] ? `<div class="gimg" style="${e.rot ? `width:${h * this.CELL - 10}px;height:${w * this.CELL - 10}px;transform:rotate(90deg)` : `width:${w * this.CELL - 10}px;height:${h * this.CELL - 10}px`}"><img src="${Parts.weapon(e.id).img.src}" draggable="false"></div>`
       : `<div class="gic" style="width:${Math.max(28, Math.min(48, big * 1.3))}px;height:${Math.max(28, Math.min(48, big * 1.3))}px">${Art.icon(e.id)}</div>`;
     return ic +
       (w * h >= 2 ? `<div class="gnm">${it.n}${e.lvl ? ' +' + e.lvl : ''}</div>` : '') +
-      (qty !== '' ? `<div class="gq">${qty}</div>` : '');
+      (qty !== '' ? `<div class="gq">${qty}</div>` : '') +
+      (it.t === 'weapon' ? attMini(e) : '');
   },
 
   // Render a backpack grid. opts: {onChange, onSelect, selected}
@@ -25,7 +26,7 @@ const GridUI = {
       if (e.gx == null) continue;
       const [w, h] = Inv.dims(e);
       const it = ITEMS[e.id];
-      const ie = U.el('div', { class: 'gitem t-' + it.t + (opts.selected === e ? ' sel' : ''), title: it.n + (it.desc ? ' — ' + it.desc : ''), style: { left: e.gx * C + 1 + 'px', top: e.gy * C + 1 + 'px', width: w * C - 2 + 'px', height: h * C - 2 + 'px' } });
+      const ie = U.el('div', { class: 'gitem t-' + it.t + (it.rank ? ' rk' + it.rank : '') + (opts.selected === e ? ' sel' : ''), title: it.n + (it.desc ? ' — ' + it.desc : ''), style: { left: e.gx * C + 1 + 'px', top: e.gy * C + 1 + 'px', width: w * C - 2 + 'px', height: h * C - 2 + 'px' } });
       ie.innerHTML = this.itemInner(e, w, h);
       this.makeDraggable(ie, { from: 'grid', list, entry: e, g }, () => opts.onSelect && opts.onSelect(e));
       if (opts.onContext) ie.addEventListener('contextmenu', ev => { ev.preventDefault(); if (!this.drag && !this.splitDown) opts.onContext(e, ev); });
@@ -102,12 +103,13 @@ const GridUI = {
       const x = Math.round((gl - r.left) / C), y = Math.round((gt - r.top) / C);
       return { grid: G0, x, y };
     }
+    let best = null, ba = Infinity;   // the smallest zone under the pointer wins (an attachment slot inside a gun card)
     for (const z of this.zones) {
       if (!z.el.isConnected) continue;
       const r = z.el.getBoundingClientRect();
-      if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) return { zone: z };
+      if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom && r.width * r.height < ba) { best = z; ba = r.width * r.height; }
     }
-    return null;
+    return best ? { zone: best } : null;
   },
   // stack merge target under the drop point
   mergeTarget(G0, x, y) {
@@ -143,16 +145,17 @@ const GridUI = {
     for (const z of this.zones) z.el.classList.remove('hover');
     const t = this.target(ev);
     this.drag = null;
-    if (!t) { this.refresh(); return; }
+    if (!t) { if (d.src.onNowhere) d.src.onNowhere(); this.refresh(); return; }
     const src = d.src, e = src.entry, it = ITEMS[e.id];
     const part = src.qty && src.qty < e.q ? src.qty : null;   // split drag (Shift = half, Ctrl = one)
     if (t.zone) {
-      if (!part) { t.zone.onDrop(src); this.refresh(); return; }
+      if (!part) { const handled = t.zone.onDrop(src); if (!handled && src.onNowhere) src.onNowhere(); this.refresh(); return; }
       // hand the zone a split-off piece; take from the original only what the zone actually used
-      const piece = { id: e.id, q: part }; let gone = false;
+      const piece = e.u != null ? { id: e.id, q: part, u: e.u } : { id: e.id, q: part }; let gone = false;
       t.zone.onDrop(Object.assign({}, src, { entry: piece, qty: null, remove: () => { gone = true; } }));
       const used = gone ? part : part - piece.q;
-      if (used > 0) { e.q -= used; if (e.q <= 0) this.removeFromSource(src); }
+      if (used > 0) { e.q -= used; delete e.u; if (e.q <= 0) this.removeFromSource(src); }
+      else if (piece.u !== e.u) e.u = piece.u;   // a use was spent from a multi-use item (repair kit)
       this.refresh(); return;
     }
     const G0 = t.grid, rot = d.rot ? 1 : 0;
@@ -228,6 +231,10 @@ const GridUI = {
     if (it.t === 'ammo') { const guns = Object.keys(ITEMS).filter(k => ITEMS[k].t === 'weapon' && ITEMS[k].ammo === e.id).map(k => ITEMS[k].n); row('ใช้กับ', guns.join(', ') || '-'); }
     if (it.t === 'med') { if (it.heal) row('ฟื้นเลือด', `+${it.heal}` + (it.regen ? ` แล้วค่อยๆ ฟื้นอีก ${it.regen}` : '')); if (it.cure) row('ลดการติดเชื้อ', `${it.cure}%`); row('เวลาใช้', it.use ? `${it.use} วิ (โดนตี/วิ่ง/โจมตี = ยกเลิก)` : 'ทันที'); }
     if (it.t === 'food') { row('อิ่ม', `+${it.food}`); if (it.heal) row('ฟื้นเลือด', `+${it.heal}`); }
+    if (it.t === 'attach' && it.fits) row('ใช้กับ', it.fits.map(k => ITEMS[k].n).join(', '));
+    if (it.t === 'attach' && it.rank) { row('ระดับ', `${'★'.repeat(it.rank)}${'☆'.repeat(3 - it.rank)}`); if (it.rank < 3) row('อัปเกรด', 'ที่ฐาน: คลิกขวาที่ของในคลัง → อัปเกรด'); }
+    if (it.uses) row('ใช้ได้', `${e.u ?? it.uses}/${it.uses} ครั้ง (ชิ้นบนสุด)` + (e.q > 1 ? ` · มีทั้งหมด ${e.q} ชิ้น` : ''));
+    if (it.t === 'armor') { row('ความแข็ง', `${armorPct(e)}% — รับความเสียหายแทนเลือดจนเหลือ 0% และกันการติดเชื้อตอนยังเหลือ`); row('น้ำหนัก', it.slow ? `เดินช้าลง ${Math.round(it.slow * 100)}%` : 'เบา ไม่ถ่วง'); row('ซ่อม', 'ที่ฐาน: คลิกขวา → ซ่อมเกราะ หรือลากชุดซ่อมมาวาง'); }
     if (it.t === 'bag' && typeof State !== 'undefined') { const g = State.gridFor(e.id); row('ความจุ', `${g.c}×${g.r} = ${g.c * g.r} ช่อง`); }
     if (it.v) row('มูลค่า', `ประมาณ ${U.fmt(it.v)} 💵`);
     return L;

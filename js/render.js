@@ -613,6 +613,10 @@ const R = {
     const flick = p.hurtT > 0 && Math.floor(p.hurtT * 30) % 2;
     if (flick) this.ctx.globalAlpha = 0.5;
     const base = 'char_' + G.char;
+    const crouch = (p.aimDownT > 0 || (!p.moving && run.downTarget && run.downTarget())) && w && ITEMS[w.id].cls !== 'melee';
+    p._crouch = crouch;
+    const realCrouch = crouch && !p.climb && Sprites.meta(base + '_crouch_bare') && Override.get(base + '_crouch_bare');   // kneeling pose (Gemini) when this character has one
+    if (crouch && !realCrouch) { this.ctx.save(); this.ctx.translate(p.x, y); this.ctx.scale(1, 0.86); this.ctx.translate(-p.x, -y); }
     if (Sprites.has(base)) {
       const it = w && ITEMS[w.id], sc = (G.char === 'joe' ? 1.1 : 1) * CHAR_SCALE;
       let key = base, face = p.facing;
@@ -621,7 +625,8 @@ const R = {
       else if (p.swingT > 0 && (!it || it.cls === 'melee')) key = base + '_melee_' + (sw < 0.45 ? 0 : 1);
       else if (it && it.cls !== 'melee' && (!p.moving || shooting || p.reloadT > 0)) key = base + (it.cls === 'pistol' ? '_pistol' : '_gun');
       else if (p.moving) key = Sprites.walkKey(base, p.walk * 0.85);
-      const legKey = p.moving && !p.climb ? Sprites.walkKey(base, p.walk * 0.85) : null;
+      if (realCrouch) key = base + '_crouch';
+      const legKey = p.moving && !p.climb && !realCrouch ? Sprites.walkKey(base, p.walk * 0.85) : null;
       if (!p.climb) Sprites.shadow(this.ctx, p.x, y, 18);
       if (p.noiseFx) { // how far that footstep / rummage carried
         const c = this.ctx, k = 1 - p.noiseFx.t / p.noiseFx.max;
@@ -629,14 +634,15 @@ const R = {
         c.beginPath(); c.ellipse(p.x, y, p.noiseFx.r * (0.35 + 0.65 * k), 10 + 14 * k, 0, 0, 7); c.stroke(); c.restore();
       }
       // empty-handed pose + the weapon actually held, placed at the grip point found during processing
-      const bareKey = key.includes('_melee_') ? key.replace('_melee_', '_melee_bare_') : (key.endsWith('_gun') || key.endsWith('_pistol')) ? key + '_bare' : null;   // _pistol_bare only once those frames exist
+      const bareKey = key.includes('_melee_') ? key.replace('_melee_', '_melee_bare_') : (key.endsWith('_gun') || key.endsWith('_pistol') || key.endsWith('_crouch')) ? key + '_bare' : null;   // _pistol_bare only once those frames exist
       const bm = bareKey && Sprites.meta(bareKey), wa = w && WEAPON_ART[w.id] && Parts.weapon(w.id);
       this.muzzle = null;
       if (bm && bm.ga != null && Override.get(bareKey) && (wa || !w)) {
         const c = this.ctx, k = sc / SPR_PPU, ws = sc * (!it || it.cls === 'melee' ? 1 : 1.05);
-        const gx = p.x + face * (bm.gx - bm.ax) * k, gy = y + (bm.gy - bm.ay) * k;
-        const ang = !it || it.cls === 'melee' ? bm.ga : bm.ga + aimTilt(aim);
-        if (legKey) Sprites.drawSplit(c, bareKey, legKey, p.x, y, face, sc, null, p.walk * 0.7, 0); else Sprites.draw(c, bareKey, p.x, y, face, sc);
+        const pr = legKey && Puppet.rig(base), yb = y + (pr ? Puppet.bob(pr, p.walk * 0.85 * Math.PI / 2) * k : 0);   // puppet legs lift the body: keep the gun in the hands
+        const gx = p.x + face * (bm.gx - bm.ax) * k, gy = yb + (bm.gy - bm.ay) * k;
+        const ang = !it || it.cls === 'melee' ? bm.ga : bm.ga + (realCrouch ? 0.55 : p._crouch ? 0.8 : aimTilt(aim));
+        if (legKey) Sprites.drawSplit(c, bareKey, legKey, p.x, y, face, sc, null, p.walk * 0.85, 0); else Sprites.draw(c, bareKey, p.x, y, face, sc);
         let L = wa ? (wa.w - wa.px) * ws : 0;
         if (wa) { // bare hands: punch with the empty-hand pose, no weapon drawn
           c.save(); c.translate(gx, gy); c.scale(face, 1); c.rotate(ang);
@@ -650,14 +656,15 @@ const R = {
         }
         // redraw the hands over the gun so they wrap the grip (rear) and the handguard (front)
         const hands = [[gx, gy]];
-        if (it && it.cls !== 'melee' && bm.fx != null) hands.push([p.x + face * (bm.fx - bm.ax) * k, y + (bm.fy - bm.ay) * k]);
-        for (const [hx, hy] of hands) { c.save(); c.beginPath(); c.arc(hx, hy, 6.5 * sc, 0, 7); c.clip(); Sprites.draw(c, bareKey, p.x, y, face, sc); c.restore(); }
+        if (it && it.cls !== 'melee' && bm.fx != null) hands.push([p.x + face * (bm.fx - bm.ax) * k, yb + (bm.fy - bm.ay) * k]);
+        for (const [hx, hy] of hands) { c.save(); c.beginPath(); c.arc(hx, hy, 6.5 * sc, 0, 7); c.clip(); Sprites.draw(c, bareKey, p.x, yb, face, sc); c.restore(); }
         if (it && it.cls !== 'melee') this.muzzle = { dx: (gx - p.x) * face + Math.cos(ang) * L, dy: y - gy - Math.sin(ang) * L };
       } else if (legKey) {
         const ph = p.walk * 0.85, sprint = Math.abs(p.vx || 0) > p.spd * 1.15;
-        Sprites.drawSplit(this.ctx, key, legKey, p.x, y + stepBob(ph, 1.4 * sc) + 0.7 * sc, face, sc, null, ph, 0);
+        Sprites.drawSplit(this.ctx, key, legKey, p.x, Puppet.rig(base) ? y : y + stepBob(ph, 1.4 * sc) + 0.7 * sc, face, sc, null, ph, 0);
       } else Sprites.draw(this.ctx, key, p.x, y, face, sc);
     } else this.drawHuman(p.x, y, { rig: Art.char(G.char), scale: (G.char === 'joe' ? 1.1 : 1) * CHAR_SCALE, facing: p.facing, walk: p.walk, moving: p.moving, pack: true, weapon: w && w.id, att: w && w.att, aim, swing: sw, climb: !!p.climb });
+    if (crouch && !realCrouch) this.ctx.restore();
     this.ctx.globalAlpha = 1;
     // hp bar above
     const ctx = this.ctx;
@@ -1048,8 +1055,8 @@ const R = {
     // minimap
     this.drawMinimap(run, ox, oy, ow, 150);
     // bars
-    const bx = 14, by = H - 112;
-    pill(bx, by, 250, 98);
+    const bx = 14, by = H - 133;
+    pill(bx, by, 250, 119);
     const bar = (i, label, v, max, col) => {
       const yy = by + 14 + i * 21;
       ctx.fillStyle = '#ccc'; ctx.font = '500 12px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'left'; ctx.fillText(label, bx + 12, yy + 10);
@@ -1057,12 +1064,13 @@ const R = {
       ctx.fillStyle = col; ctx.fillRect(bx + 76, yy, 160 * U.clamp(v / max, 0, 1), 11);
       ctx.fillStyle = 'rgba(0,0,0,0.45)'; for (let k = 1; k < 20; k++) ctx.fillRect(bx + 76 + k * 8, yy, 1.5, 11);
       ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(bx + 76, yy, 160 * U.clamp(v / max, 0, 1), 2);
-      ctx.fillStyle = '#fff'; ctx.font = '600 10px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(Math.round(v), bx + 232, yy + 9.5);
+      ctx.fillStyle = '#fff'; ctx.font = '600 10px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(Math.round(v) + (i === 0 ? '%' : ''), bx + 232, yy + 9.5);
     };
-    bar(0, '❤ เลือด', p.hp, p.maxHp, '#e04a4a');
-    bar(1, '🍖 ความอิ่ม', p.hunger, 100, '#e0a03a');
-    bar(2, '⚡ สตามินา', p.stam, 100, '#e0d040');
-    bar(3, '☣ ติดเชื้อ', p.inf, 100, '#7ad040');
+    bar(0, '🛡 เกราะ', p.armor ? armorPct(p.armor) : 0, 100, '#7fb8ff');
+    bar(1, '❤ เลือด', p.hp, p.maxHp, '#e04a4a');
+    bar(2, '🍖 ความอิ่ม', p.hunger, 100, '#e0a03a');
+    bar(3, '⚡ สตามินา', p.stam, 100, '#e0d040');
+    bar(4, '☣ ติดเชื้อ', p.inf, 100, '#7ad040');
     // weapons
     const ws = p.weapons, sw = 120, sx = W / 2 - (sw * 3 + 20) / 2, sy = H - 86;
     for (let i = 0; i < 3; i++) {

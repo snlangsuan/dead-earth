@@ -29,11 +29,11 @@ function wStats(w, charId) {
     s.dmg *= (m.meleeDmg || 1); s.rate *= (m.meleeRate || 1); s.range = it.range * (m.meleeRange || 1);
   } else {
     s.dmg *= (m.gunDmg || 1); s.spread = it.spread * (m.spread || 1) * (1 + (1 - dd / 100) * 0.6); s.reload = it.reload * (m.reload || 1);
-    const a = w.att || {};
-    if (a.scope) { s.spread *= 0.6; s.range *= 1.3; }
-    if (a.grip) { s.spread *= 0.75; s.reload *= 0.85; }
-    if (a.mag) s.mag = Math.round(it.mag * 1.5);
-    if (a.muzzle) { s.noise *= 0.25; s.dmg *= 0.95; }
+    const a = w.att || {}, rk = sl => attRank(a[sl]), F = sl => attFx(a[sl]);
+    if (a.scope && F('scope')) { s.spread *= F('scope').spread[rk('scope')]; s.range *= F('scope').range[rk('scope')]; }
+    if (a.grip && F('grip')) { s.spread *= F('grip').spread[rk('grip')]; s.reload *= F('grip').reload[rk('grip')]; }
+    if (a.mag && F('mag')) s.mag = Math.round(it.mag * F('mag').mag[rk('mag')]);
+    if (a.muzzle && F('muzzle')) { s.noise *= F('muzzle').noise[rk('muzzle')]; s.dmg *= F('muzzle').dmg[rk('muzzle')]; }
   }
   return s;
 }
@@ -271,7 +271,7 @@ const Run = {
   },
   ladderNear(e, dirUp) {
     for (const l of this.map.ladders) {
-      if (Math.abs(l.x - e.x) > 26) continue;
+      if (Math.abs(l.x - e.x) > (dirUp ? 26 : 44)) continue;   // going down: the whole hatch area (same reach as aiming down it)
       if (dirUp && l.a === e.room && l.lo === e.f) return l;
       if (!dirUp && l.b === e.room && l.lo + 1 === e.f) return l;
     }
@@ -851,7 +851,7 @@ const Run = {
         this.hurt(z.dmg);
         const kbr = p.mods.kbRes || 1;
         if (!p.climb) this.moveH(p, Math.sign(dxp) * (z.Z.boss ? 60 : z.type === 'brute' ? 40 : 10) * kbr);
-        if (Math.random() < 0.18 * (p.mods.infRes ?? 1)) { p.inf = Math.min(100, p.inf + U.ri(Math.random, 6, 14)); this.popText(p.x, py - 110, 'ติดเชื้อ!', '#9dff5c'); }
+        if (!this.armorBlocked && Math.random() < 0.18 * (p.mods.infRes ?? 1)) { p.inf = Math.min(100, p.inf + U.ri(Math.random, 6, 14)); this.popText(p.x, py - 110, 'ติดเชื้อ!', '#9dff5c'); }
         z.chargeT = 0;
       }
       return;
@@ -964,6 +964,9 @@ const Run = {
         if (b.dist > b.range) { b.dead = true; break; }
         for (const z of this.zombies) {
           if (z.dead || b.hit.has(z)) continue;
+          // no hits through floors or through a shut door: a zombie must be on the bullet's floor (or climbing into it)
+          // and nothing closed between the bullet and it (zombies pressed against the far side of a door used to get hit)
+          if (!z.climb && (z.f !== b.f || !this.clearLine(b.f, b.x, z.x))) continue;
           const zy = this.yOf(z), h = z.Z.r * (z.Z.boss ? 5.2 : 5.4);
           if (Math.abs(z.x - b.x) < z.rad + 2 && b.y < zy + 2 && b.y > zy - h) {
             b.hit.add(z);

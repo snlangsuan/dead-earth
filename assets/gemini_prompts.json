@@ -2116,5 +2116,281 @@
   "char_lina_pistol_bare",
   "Edit the attached image: erase ONLY the pistol, so the hands are empty. The arms must stay exactly where they are: raised in front of the body at chest height, elbows bent, both hands together and closed as fists in the same gripping position. Do NOT lower the arms, do NOT change the pose, body, face, size or framing. Keep the same art style. Plain white background, no text.",
   "char_lina_pistol"
+ ],
+ [
+  "icon_armor_jacket",
+  "A game item icon of a worn brown leather biker jacket laid flat, front view, scuffed and patched with a few scratch marks, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_armor_stab",
+  "A game item icon of a dark navy security guard stab-proof vest laid flat, front view, quilted panels and velcro side straps, a blank grey patch on the chest with no letters, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_armor_vest",
+  "A game item icon of an olive-green military plate carrier body armor vest laid flat, front view, hard plate pockets, MOLLE webbing with a few pouches, dusty and battle-worn, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_armor_riot",
+  "A game item icon of a black police riot gear armor set: chest and shoulder plates with forearm guards, hard shell segments with scratches, laid flat front view, no letters or insignia, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_reddot",
+  "A game item icon of a compact red-dot reflex sight for a handgun, small black metal housing with a tilted glass lens showing a tiny red dot, rail mount at the bottom, side view, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_extmag_r",
+  "A game item icon of a long curved extended assault rifle magazine, dark steel with worn edges and a few brass cartridges visible at the top, side view, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_extmag_sg",
+  "A game item icon of a shotgun magazine tube extension, a black metal tube with a clamp and end cap, a red shotgun shell beside it, side view, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_silencer_r",
+  "A game item icon of a large thick rifle suppressor, long matte black cylinder with heat-worn grey bands and threaded end, side view, clearly bigger than a pistol silencer, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_grip_p",
+  "A game item icon of a black rubber handgun grip sleeve with textured stippling and finger grooves, slightly worn, side view, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "char_jake_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_jake_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_jake_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_jake_crouch"
+ ],
+ [
+  "char_chan_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_chan_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_chan_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_chan_crouch"
+ ],
+ [
+  "char_joe_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_joe_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_joe_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_joe_crouch"
+ ],
+ [
+  "char_kenji_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_kenji_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_kenji_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_kenji_crouch"
+ ],
+ [
+  "char_lina_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_lina_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_lina_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_lina_crouch"
+ ],
+ [
+  "char_maya_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_maya_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_maya_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_maya_crouch"
+ ],
+ [
+  "char_sofia_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_sofia_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_sofia_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_sofia_crouch"
+ ],
+ [
+  "char_ton_walksheet",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw a side-view WALK CYCLE sprite sheet facing right: exactly 8 full-body frames in ONE horizontal row, evenly spaced with clear white space between them, every frame the same size and standing on the same baseline. Frame order: 1 front foot reaching forward heel down, 2 weight down on front leg, 3 back leg passing under the body, 4 rising on the toes, 5 the OTHER foot reaching forward heel down, 6 weight down, 7 passing, 8 rising. Arms swing opposite to the legs. Keep the far leg and far arm a little darker than the near ones so they read as different limbs. Natural relaxed walk with a small up-down bob, no weapon in hand, backpack and gear exactly as in the reference, no frame borders, no ground line. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
+ ],
+ [
+  "char_ton_crouch",
+  "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character crouched low on one knee, torso leaning forward, aiming an assault rifle steeply DOWNWARD at about 45 degrees at the floor in front of them, both hands on the rifle, elbows bent, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
+ ],
+ [
+  "char_ton_crouch_bare",
+  "Edit the attached image: remove ONLY the rifle and nothing else. The whole character must remain: the SAME head, face, hair and headwear, the same body, clothes, backpack and legs, the same kneeling pose, size, position and framing, still facing right. The arms stay exactly where they are, reaching forward and down with elbows bent, hands closed as empty fists in the same gripping position. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_ton_crouch"
+ ],
+ [
+  "char_jake_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_jake_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_jake_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_chan_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_chan_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_chan_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_joe_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_joe_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_joe_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_kenji_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_kenji_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_kenji_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_lina_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_lina_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_lina_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_maya_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_maya_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_maya_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_sofia_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_sofia_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_sofia_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_ton_body",
+  "Edit the attached image: erase BOTH legs below the bottom hem of the top/jacket, and erase the ONE arm that is nearest to the viewer (the arm in front of the torso, including its hand). Keep the head, face, torso, backpack and the far arm exactly as they are, same pose, size, position and framing, facing right. Where the near arm was, continue the side of the torso and clothing naturally. Keep the same art style. Plain white background, no text.",
+  "char_ton"
+ ],
+ [
+  "char_ton_leg",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE leg of this character as a separate sprite part for animation: the trouser leg from the hip down to and including the shoe or boot, perfectly straight and vertical, side view with the toe pointing right, the same width and length as the character's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
+ ],
+ [
+  "char_ton_arm",
+  "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
  ]
 ]

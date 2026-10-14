@@ -34,6 +34,9 @@ Object.assign(Run, {
     return false;
   },
   // field repair needs more than the base workbench: a repair kit + parts, 4s standing still, and it is noisy
+  // spend one use of a repair kit; returns true when the entry ran out (caller removes it)
+  useKitEntry(e) { const u = e.u ?? ITEMS.repairkit.uses; if (u > 1) { e.u = u - 1; return false; } e.q -= 1; delete e.u; return e.q <= 0; },
+  useKitFrom(list) { const e = list.find(x => x.id === 'repairkit'); if (e && this.useKitEntry(e)) list.splice(list.indexOf(e), 1); },
   fieldRepairCost(w) { const gun = ITEMS[w.id].cls !== 'melee'; return gun ? { repairkit: 1, gunparts: 1, scrap: 1 } : { repairkit: 1, scrap: 2 }; },
   startFieldRepair(w) {
     const p = this.p; w = w || this.curWeapon();
@@ -54,7 +57,7 @@ Object.assign(Run, {
     if (Math.floor(j.t * 2) !== Math.floor((j.t - dt) * 2)) { Snd.hammer && Snd.hammer(); this.noise(p.x, this.yOf(p), 240, 0.5); }
     if (j.t >= j.T) {
       this.repairJob = null;
-      for (const [id, n] of Object.entries(j.cost)) Inv.remove(p.backpack, id, n);
+      for (const [id, n] of Object.entries(j.cost)) { if (id === 'repairkit') this.useKitFrom(p.backpack); else Inv.remove(p.backpack, id, n); }
       this.repairWith(null, j.w);
     }
   },
