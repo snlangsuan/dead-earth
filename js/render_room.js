@@ -104,13 +104,19 @@ Object.assign(R, {
       ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(ix, wy0); ctx.lineTo(ix, wy1); ctx.stroke();
       const doorX = left ? rm.x0 : rm.x1;
       if (run.door(rm.f, doorX)) {
-        // doorway opening in the side wall (perspective)
         const dh = DOOR_H, k = 0.82;
+        const dobj = run.doorObj && run.doorObj(rm.f, doorX);
+        const shut = dobj && (dobj.lk || (dobj.closed && !dobj.broken));
+        // the leaf belongs to the other room: shut -> plain wall with a faint frame, open -> just the dark opening
+        if (dobj && dobj.own != null && dobj.own !== rm.id) {
+          ctx.beginPath(); ctx.moveTo(ox, by1); ctx.lineTo(ox, by1 - dh); ctx.lineTo(ix, wy1 - dh * k); ctx.lineTo(ix, wy1); ctx.closePath();
+          if (shut) { ctx.strokeStyle = 'rgba(0,0,0,0.28)'; ctx.lineWidth = 2; ctx.stroke(); return; }
+          ctx.fillStyle = '#07090b'; ctx.fill(); ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth = 3; ctx.stroke(); return;
+        }
+        // doorway opening in the side wall (perspective)
         ctx.fillStyle = '#07090b';
         ctx.beginPath(); ctx.moveTo(ox, by1); ctx.lineTo(ox, by1 - dh); ctx.lineTo(ix, wy1 - dh * k); ctx.lineTo(ix, wy1); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth = 3; ctx.stroke();
-        const dobj = run.doorObj && run.doorObj(rm.f, doorX);
-        const shut = dobj && (dobj.lk || (dobj.closed && !dobj.broken));
         if (shut) { this.drawClosedDoor(ctx, dobj, ox, ix, by1, wy1, dh, k, left); return; }
         if (dobj && dobj.broken) { // splintered stub left on the hinge
           ctx.fillStyle = '#4a3220'; ctx.strokeStyle = OL; ctx.lineWidth = 1.5; const d2 = left ? 1 : -1;

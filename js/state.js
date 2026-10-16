@@ -5,7 +5,7 @@ let G = null; // persistent game state
 const Inv = {
   isStack(id) { const it = ITEMS[id]; return it.t !== 'weapon' && it.st > 1; },
   makeWeapon(id) { return { id, q: 1, uid: U.uid(), lvl: 0, att: {}, mag: ITEMS[id].mag || 0, dur: 100 }; },
-  make(id, q) { return ITEMS[id].t === 'weapon' ? Inv.makeWeapon(id) : { id, q }; },
+  make(id, q) { return ITEMS[id].t === 'weapon' ? Inv.makeWeapon(id) : ITEMS[id].t === 'armor' ? { id, q: 1, ap: ITEMS[id].ap } : { id, q }; },
   used(list) { let s = 0; for (const e of list) s += ITEMS[e.id].sz; return s; },
   count(list, id) { let s = 0; for (const e of list) if (e.id === id) s += e.q; return s; },
   // remove q units of id from list; returns removed
@@ -50,19 +50,19 @@ const Inv = {
   addToPack(list, entry, g) {
     const it = ITEMS[entry.id];
     if (!Inv.isStack(entry.id)) {
-      const e = it.t === 'weapon' ? entry : { id: entry.id, q: entry.q };
+      const e = it.t === 'weapon' || it.t === 'armor' ? entry : { id: entry.id, q: entry.q };
       return Inv.place(list, g, e) ? 0 : entry.q;
     }
     let left = entry.q;
     for (const e of list) {
       if (e.id !== entry.id || e.q >= it.st) continue;
       const add = Math.min(it.st - e.q, left);
-      e.q += add; left -= add;
+      e.q += add; left -= add; Inv.mergeUses(e, entry);
       if (left <= 0) return 0;
     }
     while (left > 0) {
       const add = Math.min(it.st, left);
-      if (!Inv.place(list, g, { id: entry.id, q: add })) break;
+      if (!Inv.place(list, g, entry.u != null ? { id: entry.id, q: add, u: entry.u } : { id: entry.id, q: add })) break;
       left -= add;
     }
     return left;
@@ -82,10 +82,12 @@ const Inv = {
   // Unlimited list (stash / ground) — stackables merge freely
   addFree(list, entry) {
     delete entry.gx; delete entry.gy; delete entry.rot;
-    if (ITEMS[entry.id].t === 'weapon') { list.push(entry); return; }
+    if (ITEMS[entry.id].t === 'weapon' || ITEMS[entry.id].t === 'armor') { list.push(entry); return; }
     const ex = list.find(e => e.id === entry.id);
-    if (ex) ex.q += entry.q; else list.push({ id: entry.id, q: entry.q });
+    if (ex) { ex.q += entry.q; Inv.mergeUses(ex, entry); } else list.push(entry.u != null ? { id: entry.id, q: entry.q, u: entry.u } : { id: entry.id, q: entry.q });
   },
+  // multi-use items (repair kit): a stack tracks the uses left on its top unit; merging keeps the lower count (never refills)
+  mergeUses(into, from) { if (from.u != null) into.u = Math.min(into.u ?? ITEMS[into.id].uses ?? from.u, from.u); },
   sortList(list) {
     const order = ['weapon', 'bag', 'tool', 'key', 'blueprint', 'ammo', 'throw', 'med', 'food', 'attach', 'part', 'mat', 'val', 'quest'];
     list.sort((a, b) => order.indexOf(ITEMS[a.id].t) - order.indexOf(ITEMS[b.id].t) || a.id.localeCompare(b.id));
@@ -96,7 +98,7 @@ const State = {
   hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } },
   save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { } },
   load() {
-    try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); if (!G.blueprints) G.blueprints = ['knife', 'bat']; if (!G.keys) G.keys = {}; if (!G.bag) G.bag = 'pack_day'; if (!G.opened) G.opened = {}; if (!G.gotLock) { G.gotLock = true; Inv.addFree(G.stash, { id: 'lockpick', q: 3 }); } if (!G.shopV2) { G.shopV2 = true; State.restock(); } if (!G.market) G.market = { bought: {}, sold: {} }; if (!G.locOrderV2) { G.locOrderV2 = true; for (const k in G.progress || {}) G.progress[k].order = [...G.progress[k].order].sort((a, b) => a - b); } if (!G.gotBarr) { G.gotBarr = true; Inv.addFree(G.stash, { id: 'plank', q: 4 }); Inv.addFree(G.stash, { id: 'nails', q: 8 }); } return true; } } catch (e) { }
+    try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); if (!G.blueprints) G.blueprints = ['knife', 'bat']; if (!G.keys) G.keys = {}; if (!G.bag) G.bag = 'pack_day'; if (!G.opened) G.opened = {}; if (!G.gotLock) { G.gotLock = true; Inv.addFree(G.stash, { id: 'lockpick', q: 3 }); } if (!G.shopV2) { G.shopV2 = true; State.restock(); } if (!G.market) G.market = { bought: {}, sold: {} }; if (!G.locOrderV2) { G.locOrderV2 = true; for (const k in G.progress || {}) G.progress[k].order = [...G.progress[k].order].sort((a, b) => a - b); } if (G.shop && G.shop.stock && !G.shop.stock.some(x => x.id === 'lockpick')) { G.shop.stock.push({ id: 'lockpick', q: 6 }); Inv.sortList(G.shop.stock); } if (!G.gotBarr) { G.gotBarr = true; Inv.addFree(G.stash, { id: 'plank', q: 4 }); Inv.addFree(G.stash, { id: 'nails', q: 8 }); } return true; } } catch (e) { }
     return false;
   },
   wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } },
@@ -173,18 +175,20 @@ const State = {
     for (const k of ['bought', 'sold']) { const m = State.mkt()[k]; for (const id in m) { m[id] = Math.floor(m[id] / 2); if (!m[id]) delete m[id]; } }
     const r = U.rng(Date.now() & 0xffffffff);
     const pool = Object.keys(ITEMS).filter(id => ITEMS[id].tier != null && ITEMS[id].tier <= tier);
-    const always = ['a9', 'bandage', 'canned', 'water'];
+    const always = ['a9', 'bandage', 'canned', 'water', 'lockpick'];   // lockpicks open locked cabinets / key containers
     const n = Math.min(pool.length, 13 + tier * 3 + (G.roles.merchant ? 4 : 0));
     const chosen = new Set(always.filter(a => pool.includes(a)));
     // weapons wear out now, so the shop always carries some: 2 melee + 2 guns (when the tier has them) and a repair kit
     const wpool = cls => U.shuffle(r, pool.filter(id => ITEMS[id].t === 'weapon' && (cls === 'melee' ? ITEMS[id].cls === 'melee' : ITEMS[id].cls !== 'melee')));
     for (const id of [...wpool('melee').slice(0, 2), ...wpool('gun').slice(0, 2)]) chosen.add(id);
     if (pool.includes('repairkit')) chosen.add('repairkit');
+    // and one piece of body armor (the best tier unlocked gets the edge)
+    { const ap = pool.filter(id => ITEMS[id].t === 'armor').sort((x, y) => ITEMS[y].tier - ITEMS[x].tier); if (ap.length) chosen.add(r() < 0.6 ? ap[0] : U.pick(r, ap)); }
     for (const id of U.shuffle(r, pool)) { if (chosen.size >= n) break; chosen.add(id); }
     G.shop = {
       stock: [...chosen].map(id => {
         const it = ITEMS[id];
-        let q = it.t === 'bag' ? 1 : it.t === 'weapon' ? U.ri(r, 1, 2) : it.t === 'ammo' ? U.ri(r, 4, 8) : it.t === 'attach' ? 1 : U.ri(r, 3, 10);
+        let q = it.t === 'bag' || it.t === 'armor' ? 1 : it.t === 'weapon' ? U.ri(r, 1, 2) : it.t === 'ammo' ? U.ri(r, 4, 8) : it.t === 'attach' ? 1 : U.ri(r, 3, 10);
         return { id, q };
       }),
     };

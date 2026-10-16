@@ -23,13 +23,15 @@ const UIRun = {
 
   itemCard(e, opts) {
     const it = ITEMS[e.id];
-    const qty = it.t === 'weapon' ? (it.mag != null ? `${e.mag}/${it.mag}` : '') : (e.q > 1 ? '×' + e.q : '');
+    const qty = it.t === 'weapon' ? (it.mag != null ? `${e.mag}/${attMagCap(e)}` : '') : (e.q > 1 ? '×' + e.q : '');
     const shape = it.sz ? `${it.gw}×${it.gh}` : '';
     const lvl = e.lvl ? `<span class="lvl">+${e.lvl}</span>` : '';
-    const att = e.att && Object.keys(e.att).length ? `<span class="att">${Object.keys(e.att).map(k => ITEMS[e.att[k]].icon).join('')}</span>` : '';
-    const card = U.el('div', { class: 'icard t-' + it.t + (opts.cls ? ' ' + opts.cls : ''), title: (it.desc || TYPE_LABEL[it.t]) });
+    const att = !opts.noAtt && it.t === 'weapon' ? attMini(e) : '';
+    const card = U.el('div', { class: 'icard t-' + it.t + (it.rank ? ' rk' + it.rank : '') + (opts.cls ? ' ' + opts.cls : ''), title: (it.desc || TYPE_LABEL[it.t]) });
     const dbar = it.t === 'weapon' ? `<div class="dur" title="ความทน ${Math.ceil(dur(e))}% · ซ่อมแล้ว ${e.rep || 0} ครั้ง · ครั้งหน้าซ่อมได้สูงสุด ${Math.max(0, repairCap(e))}%"><s style="left:${durMax(e)}%;width:${100 - durMax(e)}%"></s><i style="width:${Math.max(0, dur(e))}%;background:${durColor(dur(e))}"></i></div><div class="durt">${Math.ceil(dur(e))}%${e.rep ? ` · ซ่อม ${e.rep}/5` : ''}</div>${dur(e) <= 0 ? '<span class="broken">พัง</span>' : ''}` : '';
-    card.innerHTML = `<div class="ic">${Art.icon(e.id)}</div><div class="nm">${it.n}${lvl}</div><div class="meta"><span>${qty}</span>${att}<span class="sz">${shape}</span></div>${dbar}`;
+    const abar = it.t === 'armor' ? (() => { const ap = armorAP(e), k = armorPct(e); return `<div class="dur" title="ความแข็งเกราะ ${k}%"><i style="width:${k}%;background:#7fb8ff"></i></div><div class="durt">${k}%</div>${ap <= 0 ? '<span class="broken">พัง</span>' : ''}`; })() : '';
+    const ubar = it.uses ? (() => { const u = e.u ?? it.uses, k = u / it.uses * 100; return `<div class="dur" title="ชิ้นบนสุดใช้ได้อีก ${u}/${it.uses} ครั้ง"><i style="width:${k}%;background:#c9a24a"></i></div><div class="durt">ใช้ได้ ${u}/${it.uses}</div>`; })() : '';
+    card.innerHTML = `<div class="ic">${Art.icon(e.id)}</div><div class="nm">${it.n}${lvl}</div><div class="meta"><span>${qty}</span>${att}<span class="sz">${shape}</span></div>${dbar}${abar}${ubar}`;
     if (opts.actions) {
       const row = U.el('div', { class: 'acts' });
       for (const [label, fn, kind] of opts.actions) row.appendChild(U.el('button', { class: 'mini ' + (kind || ''), onclick: ev => { ev.stopPropagation(); fn(); } }, label));
@@ -83,7 +85,8 @@ const UIRun = {
       let card;
       if (!w) card = U.el('div', { class: 'icard empty' }, U.el('div', { class: 'nm' }, SLOT_LABEL[i]), U.el('div', { class: 'meta' }, 'ลากอาวุธมาวาง'));
       else {
-        card = this.itemCard(w, { cls: i === p.cur ? 'sel' : '' });
+        card = this.itemCard(w, { cls: i === p.cur ? 'sel' : '', noAtt: true });
+        if (attSlotsFor(w).length) card.appendChild(attSlotsEl(w, x => { const left = Inv.addToPack(p.backpack, x, p.grid); if (left) this.toGround({ id: x.id, q: left }); }, () => this.render()));
         card.addEventListener('contextmenu', ev => { ev.preventDefault(); if (GridUI.drag) return;
           GridUI.ctxMenu(ev, ITEMS[w.id].n, [
             ['ข้อมูล', () => GridUI.showInfo(w)],
@@ -96,12 +99,39 @@ const UIRun = {
       if (w) GridUI.makeDraggable(card, { from: 'slot', list: null, entry: w, remove: () => { p.weapons[i] = null; } });
       GridUI.zone(card, src => {
         const e = src.entry; if (ITEMS[e.id].t === 'ammo' && w) { this.dragReload(i, w, src); return true; }
+        if (ITEMS[e.id].t === 'attach' && w) return attInstall(w, src, x => { const left = Inv.addToPack(p.backpack, x, p.grid); if (left) this.toGround({ id: x.id, q: left }); });
+        if (e.id === 'repairkit' && w) {   // drop a repair kit on a weapon = field repair (kit + parts are used when it finishes)
+          if (src.list !== p.backpack) { toast('เก็บชุดซ่อมเข้าเป้ก่อน แล้วค่อยลากใส่อาวุธ', 'warn'); return true; }
+          p.cur = i; p.reloadT = 0;
+          if (Run.startFieldRepair(w)) { toast(`กำลังซ่อม ${ITEMS[w.id].n}... ยืนนิ่งไว้`); this.close(); }
+          return true;
+        }
         if (ITEMS[e.id].t !== 'weapon' || CLS_SLOT[ITEMS[e.id].cls] !== i) { toast('ช่องนี้ใส่ได้เฉพาะ' + SLOT_LABEL[i], 'warn'); return false; }
         if (src.from === 'slot') return false;
         this.equip(e, src.list || []); return true;
       });
       wcol.appendChild(card);
     });
+    {
+      const a = p.armor; let card;
+      if (!a) card = U.el('div', { class: 'icard empty' }, U.el('div', { class: 'nm' }, 'ชุดเกราะ'), U.el('div', { class: 'meta' }, 'ลากชุดเกราะมาวาง'));
+      else {
+        card = this.itemCard(a, {});
+        card.addEventListener('contextmenu', ev => { ev.preventDefault(); if (GridUI.drag) return;
+          GridUI.ctxMenu(ev, ITEMS[a.id].n, [['ข้อมูล', () => GridUI.showInfo(a)], ['ถอดใส่เป้', () => { if (Inv.addToPack(p.backpack, a, p.grid)) toast('เป้เต็ม', 'warn'); else { p.armor = null; Run.armorSpeed(); } this.render(); }], ['ทิ้ง', () => { p.armor = null; Run.armorSpeed(); this.toGround(a); this.render(); }, 'danger']]); });
+        GridUI.makeDraggable(card, { from: 'slot', list: null, entry: a, remove: () => { p.armor = null; Run.armorSpeed(); } });
+      }
+      GridUI.zone(card, src => {
+        const e = src.entry;
+        if (ITEMS[e.id].t !== 'armor') { toast('ช่องนี้ใส่ได้เฉพาะชุดเกราะ', 'warn'); return false; }
+        if (src.from === 'slot') return false;
+        GridUI.removeFromSource(src); delete e.gx; delete e.gy; delete e.rot; if (e.ap == null) e.ap = armorMax(e.id);
+        const old = p.armor; p.armor = e; Run.armorSpeed();
+        if (old) { const left = Inv.addToPack(p.backpack, old, p.grid); if (left) this.toGround(old); }
+        toast(`สวม ${ITEMS[e.id].n}`, 'good'); return true;
+      });
+      wcol.appendChild(card);
+    }
     wcol.appendChild(U.el('div', { class: 'vitals' },
       U.el('div', null, `❤ ${Math.round(p.hp)}/${p.maxHp}`), U.el('div', null, `🍖 ${Math.round(p.hunger)}`), U.el('div', null, `☣ ${Math.round(p.inf)}%`), U.el('div', null, `💵 ${U.fmt(Run.cash)}`)));
     if (!this.loot) wcol.appendChild(GridUI.zone(U.el('div', { class: 'groundzone' }, '⬇ ลากมาที่นี่เพื่อวางลงพื้น'), src => {
@@ -154,21 +184,15 @@ const UIRun = {
   openPause() {
     Run.panel = 'pause';
     const o = this.el(); o.className = 'show'; o.innerHTML = '';
-    const panel = U.el('div', { class: 'panel small' },
-      U.el('h2', null, 'หยุดเกม'),
-      U.el('div', { class: 'help' }, U.el('div', { html: `
-        <b>วิธีเล่น</b><br>
-        • <b>A/D</b> เดิน · <b>W/S</b> ปีนบันได · <b>Shift</b> วิ่ง · <b>Z ค้าง</b> ย่อง<br>• เสียง: ย่อง = เงียบและซอมบี้มองเห็นยากขึ้น · เดิน = ซอมบี้ใกล้ ๆ อาจได้ยิน (~40–60%) · วิ่ง / ค้นของ / เปิดปิดประตู = ได้ยินง่าย (60%+)<br>
-        • <b>คลิกซ้าย / Space</b> โจมตี (ปืนเล็งเป้าอัตโนมัติไปทางที่หันอยู่) · <b>เมาส์</b> เลือกทิศที่หัน<br>
-        • <b>1 2 3</b> สลับอาวุธ · <b>R</b> รีโหลด<br>
-        • <b>Q</b> (หรือ <b>E</b>) ค้นเฟอร์นิเจอร์ — การค้นมีเสียง ขยับ = หยุดค้น · <b>E</b> เปิดดู/ช่วยคน · <b>F</b> เก็บทั้งหมด<br>
-        • <b>Tab</b> เปิดเป้<br>
-        • <b>จุดอพยพ (แสงสีเขียว)</b> = ยืนรอนับถอยหลังเพื่อกลับฐาน มีที่ถนนฝั่งขวาและลาน ฮ. บนดาดฟ้า<br>• <b>4-9</b> = ปุ่มลัดใช้ไอเทม (จัดเองได้ในเป้ หรือหน้าเตรียมตัวที่ฐาน) · <b>E</b> ที่ประตู = เปิด/ปิด · <b>B ค้าง</b> = เสริมประตู<br>• บอสไม่ต้องสู้ก็ได้ ฆ่าแล้วได้ของดีและกุญแจเข้าพื้นที่หวงห้าม<br>
-        • ยิ่งอยู่นาน/ยิงเสียงดัง ระดับอันตรายยิ่งสูง · ถ้าตาย เสียของในเป้และเงินรอบนี้` })),
-      U.el('div', { class: 'row' },
-        U.el('button', { class: 'btn primary', onclick: () => this.close() }, 'เล่นต่อ'),
-        U.el('button', { class: 'btn', onclick: () => UI.openSettings(() => this.openPause()) }, 'ตั้งค่า'),
-        U.el('button', { class: 'btn danger', onclick: () => { if (confirm('ทิ้งภารกิจ? จะนับเป็นการตาย (เสียของในเป้)')) { this.close(); Run.die('abandon'); } } }, 'ทิ้งภารกิจ')));
+    // same look as the title screen: stencil heading, left-aligned menu buttons
+    o.className = 'show pause';
+    const panel = U.el('div', { class: 'titlebox pausemenu' },
+      U.el('div', { class: 'logo' }, 'PAUSED'),
+      U.el('div', { class: 'logo2' }, 'หยุดเกม'),
+      U.el('div', { class: 'tag' }, `Lv ${Run.lv} · ${Run.loc.n} — ${Run.stage.n}`),
+      U.el('button', { class: 'btn primary big', onclick: () => this.close() }, 'เล่นต่อ'),
+      U.el('button', { class: 'btn big', onclick: () => UI.openSettings(() => this.openPause()) }, 'ตั้งค่า'),
+      U.el('button', { class: 'btn big quit', onclick: () => UI.ask('ทิ้งภารกิจ?', 'จะนับเป็นการตาย — ของในเป้หายหมด', 'ทิ้งภารกิจ', () => { this.close(); Run.die('abandon'); }, true) }, 'ทิ้งภารกิจ'));
     o.appendChild(panel);
   },
 
@@ -189,7 +213,7 @@ const UIRun = {
       for (const b of (r.learned || [])) lines.push(`📘 เรียนรู้พิมพ์เขียวใหม่: <b>${b}</b> — ประกอบได้ที่โรงช่าง`);
     } else {
       lines.push('<span class="w">เสียของทั้งหมดในเป้และเงินที่เก็บได้ในรอบนี้</span>');
-      lines.push(`อาวุธที่ถืออยู่ยังอยู่ (ผู้รอดชีวิตลากคุณกลับมา) · พักฟื้นที่ฐานแล้วเลือดเหลือ ${G.chars[G.char].hp}/${CHARACTERS[G.char].hp}`);
+      lines.push(`อาวุธที่ถือและชุดเกราะที่สวมยังอยู่ (ผู้รอดชีวิตลากคุณกลับมา) · พักฟื้นที่ฐานแล้วเลือดเหลือ ${G.chars[G.char].hp}/${CHARACTERS[G.char].hp}`);
       if (r.rescued.length) lines.push('ผู้รอดชีวิตที่ช่วยไว้หนีไปไม่รอด...');
     }
     lines.push(`ฆ่าซอมบี้: ${r.kills} · ค้นของ: ${r.searchCount} จุด · ระดับอันตรายสูงสุด: ${r.level}`);

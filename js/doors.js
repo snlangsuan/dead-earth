@@ -13,6 +13,9 @@ Object.assign(Run, {
     const map = this.map, r = Math.random;
     for (const d of map.doors) {
       Object.assign(d, { kind: 'door', isDoor: true, lvl: 0, max: DOOR_HP[0], hp: DOOR_HP[0], hitT: 0, closed: false, broken: !!d.startBroken });
+      // a doorway has ONE door leaf: it is drawn in one room's side wall only (the indoor side for street exits);
+      // the neighbouring room just shows the opening, or plain wall while the door is shut
+      { const ra = map.rooms[d.a], rb = map.rooms[d.b]; d.own = ra.outdoor ? d.b : rb.outdoor ? d.a : ((d.x * 7 + d.f * 13) % 2 ? d.a : d.b); }
       if (d.broken) { d.hp = 0; continue; }
       const a = map.rooms[d.a], b = map.rooms[d.b];
       if (!d.lk && !(a.outdoor && b.outdoor) && r() < 0.35) this.setDoor(d, true, true);

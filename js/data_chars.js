@@ -48,9 +48,9 @@ const GENERIC_NAMES = ['สมชาย', 'นภา', 'ก้อง', 'ปร�
 
 // ---------- Zombies ----------
 const ZOMBIES = {
-  walker:  { n: 'ซอมบี้', hp: 55, spd: 58, dmg: 10, r: 14, col: '#6f8f5c', sight: 330, score: 1 },
-  runner:  { n: 'ซอมบี้วิ่ง', hp: 36, spd: 120, dmg: 8, r: 12, col: '#93a35a', sight: 380, score: 1 },
-  brute:   { n: 'ยักษ์', hp: 340, spd: 46, dmg: 28, r: 22, col: '#556644', sight: 300, score: 3 },
-  spitter: { n: 'นักพ่นกรด', hp: 75, spd: 52, dmg: 12, r: 14, col: '#a4c639', sight: 420, score: 2, ranged: true },
-  boss:    { n: 'อสุรกายกลายพันธุ์', hp: 2600, spd: 74, dmg: 38, r: 34, col: '#7a3b3b', sight: 600, score: 20, boss: true },
+  walker:  { n: 'ซอมบี้', hp: 55, spd: 58, dmg: 10, atk: 1.0, inf: 0.18, r: 14, col: '#6f8f5c', sight: 330, score: 1 },
+  runner:  { n: 'ซอมบี้วิ่ง', hp: 36, spd: 120, dmg: 6, atk: 0.6, inf: 0.1, r: 12, col: '#93a35a', sight: 380, score: 1 },
+  brute:   { n: 'ยักษ์', hp: 340, spd: 46, dmg: 30, atk: 1.7, inf: 0.25, r: 22, col: '#556644', sight: 300, score: 3 },
+  spitter: { n: 'นักพ่นกรด', hp: 75, spd: 52, dmg: 6, atk: 1.2, inf: 0.12, acid: 14, r: 14, col: '#a4c639', sight: 420, score: 2, ranged: true },
+  boss:    { n: 'อสุรกายกลายพันธุ์', hp: 2600, spd: 74, dmg: 40, atk: 1.3, inf: 0.3, r: 34, col: '#7a3b3b', sight: 600, score: 20, boss: true },
 };

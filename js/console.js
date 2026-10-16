@@ -44,8 +44,8 @@ const Dev = {
         const v = this.inp.value.trim(); this.inp.value = ''; this.suggest(); if (v) { this.hist.unshift(v); this.hi = -1; this.run(v); }
       }
       else if (this.locked) return;
-      else if (e.code === 'ArrowUp') { e.preventDefault(); if (this.sugList.length) { this.sugI = Math.max(0, this.sugI - 1); this.drawSug(); return; } this.hi = Math.min(this.hist.length - 1, this.hi + 1); if (this.hist[this.hi]) this.inp.value = this.hist[this.hi]; }
-      else if (e.code === 'ArrowDown') { e.preventDefault(); if (this.sugList.length) { this.sugI = Math.min(this.sugList.length - 1, this.sugI + 1); this.drawSug(); return; } this.hi = Math.max(-1, this.hi - 1); this.inp.value = this.hi >= 0 ? this.hist[this.hi] : ''; }
+      else if (e.code === 'ArrowUp') { e.preventDefault(); if (this.sugList.length) { this.markSug(Math.max(0, this.sugI - 1)); return; } this.hi = Math.min(this.hist.length - 1, this.hi + 1); if (this.hist[this.hi]) this.inp.value = this.hist[this.hi]; }
+      else if (e.code === 'ArrowDown') { e.preventDefault(); if (this.sugList.length) { this.markSug(Math.min(this.sugList.length - 1, this.sugI + 1)); return; } this.hi = Math.max(-1, this.hi - 1); this.inp.value = this.hi >= 0 ? this.hist[this.hi] : ''; }
       else if (e.code === 'Tab') { e.preventDefault(); if (this.sugList.length) this.pickSug(Math.max(0, this.sugI)); else this.complete(); }
     }, true);
     window.addEventListener('keyup', e => { if (this.open) e.stopImmediatePropagation(); }, true);
@@ -105,10 +105,24 @@ const Dev = {
     this.sug.innerHTML = '';
     this.sug.classList.toggle('show', this.sugList.length > 0);
     this.sugList.forEach((id, i) => {
-      const it = ITEMS[id], row = U.el('div', { class: 'dc-s' + (i === this.sugI ? ' on' : ''), onmousedown: ev => { ev.preventDefault(); this.pickSug(i); } });
+      const it = ITEMS[id], row = U.el('div', { class: 'dc-s' + (i === this.sugI ? ' on' : ''), onmousedown: ev => { ev.preventDefault(); this.pickSug(i); }, onmousemove: () => { if (this.sugI !== i) this.markSug(i, true); } });
       row.innerHTML = `<span class="ic">${Art.icon(id)}</span><b>${itemEn(id)}</b><span class="th">${it.n}</span><code>${id}</code><small>${TYPE_LABEL[it.t] || it.t}</small>`;
       this.sug.appendChild(row);
     });
+    this.sug.scrollTop = 0;
+  },
+  // move the single highlight without rebuilding the list, and keep it in view
+  markSug(i, mouse) {
+    const rows = this.sug.children;
+    if (rows[this.sugI]) rows[this.sugI].classList.remove('on');
+    this.sugI = i;
+    const r = rows[i]; if (!r) return;
+    r.classList.add('on');
+    if (!mouse) {
+      const top = r.offsetTop, bot = top + r.offsetHeight;
+      if (top < this.sug.scrollTop) this.sug.scrollTop = top;
+      else if (bot > this.sug.scrollTop + this.sug.clientHeight) this.sug.scrollTop = bot - this.sug.clientHeight;
+    }
   },
   pickSug(i) {
     const id = this.sugList[i]; if (!id) return;
@@ -207,7 +221,7 @@ const Dev = {
     locs: { u: '<ด่าน>', d: 'ดู location ในด่าน', fn(a) {
       const st = this.findStage(a[0]); if (!st) { this.print('ไม่พบด่าน (ใช้รหัส ลำดับ หรือชื่อ)', 'err'); return; }
       const prog = G ? State.stageProg(st.id) : { cleared: [] };
-      st.locs.forEach((l, i) => { const t = KeyGraph.locTarget(st.id, i); this.print(`  [${i}] ${l.n} (${THEMES[l.theme].n})${prog.cleared.includes(i) ? ' ✓' : ''}${t ? (KeyGraph.opened(t) ? ' 🔓' : ' 🔒 ' + t.id) : ''}${KeyGraph.sourcesAt(st.id, i).map(t => ' 🔑' + t.id + '(' + t.src.method + ')').join('')}`); });
+      st.locs.forEach((l, i) => { const t = KeyGraph.locTarget(st.id, i); this.print(`  [${i}] ${l.n} (${THEMES[l.theme].n})${prog.cleared.includes(i) ? ' ✓' : ''}${t ? (KeyGraph.opened(t) ? ' 🔓' : ' 🔒 ' + t.id) : ''}${KeyGraph.sourcesAt(st.id, i).map(t => ' 🔑' + t.id + '(' + KeyGraph.method(t) + ')').join('')}`); });
     } },
     unlock: { u: '<ด่าน|all>', d: 'ปลดล็อกด่าน (+คีย์ของด่านนั้น)', fn(a) {
       if (!this.needGame()) return;
@@ -240,9 +254,30 @@ const Dev = {
       Run.start(st.id, li, false);
       this.print(`✔ เข้า ${st.locs[li].n} (${st.n})`, 'ok');
     } },
+    reset: { d: 'ลบเซฟทั้งหมด แล้วเริ่มเหมือนเล่นครั้งแรก (มีของเริ่มต้น + สอนเล่น)', fn() {
+      this.toggle(false);
+      UI.ask('ลบเซฟทั้งหมด?', 'ของในคลัง ผู้รอดชีวิต และความคืบหน้าจะหายทั้งหมด\nแล้วกลับไปหน้าเมนูหลักเหมือนเปิดเกมครั้งแรก', 'ลบเซฟ', () => {
+        if (Run.active) { Run.active = false; Run.over = true; }
+        try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+        G = null; Tut.hide(); UI.showTitle(); toast('ลบเซฟแล้ว — กด “เริ่มเกมใหม่” เพื่อเล่นตั้งแต่ต้น', 'good');
+      }, true);
+    } },
+    tutorial: { u: '[run]', d: 'เล่นการสอนอีกครั้งบนเซฟนี้: ด่านสอนเล่น → สอนใช้ฐาน (run = เฉพาะด่านสอนเล่น)', fn(a) {
+      if (!this.needGame()) return;
+      G.tut = { base: true, run: true }; Tut.baseStep = 0; State.save();
+      if (a[0] === 'run') {
+        const st = STAGES[0];
+        if (Run.active) { Run.active = false; Run.over = true; }
+        if (typeof UIRun !== 'undefined' && UIRun.close) try { UIRun.close(); } catch (e) { }
+        G.tut.base = false; this.toggle(false); Run.start(st.id, State.stageProg(st.id).order[0], false);
+        this.print('✔ เข้าด่านสอนเล่น', 'ok'); return;
+      }
+      if (!Run.active) { this.toggle(false); UI.showBase(); }
+      this.print('✔ เปิดการสอนแล้ว — เข้าด่านสอนเล่นก่อน แล้วสอนการใช้ฐานตอนกลับมา', 'ok');
+    } },
     boss: { d: 'เรียกบอสทันที', fn() { if (!this.needRun()) return; Run.bossSpawned = false; Run.spawnBoss(); this.print('✔ บอสมาแล้ว ×' + Run.bosses.length, 'ok'); } },
     killall: { d: 'ฆ่าซอมบี้ทั้งหมดในด่าน', fn() { if (!this.needRun()) return; let n = 0; for (const z of Run.zombies) if (!z.dead) { Run.damageZombie(z, Math.ceil(z.hp) + 1, 0); n++; } this.print(`✔ ฆ่า ${n} ตัว`, 'ok'); } },
-    level: { u: '<n>', d: 'ตั้งระดับอันตราย', fn(a) { if (!this.needRun()) return; const n = Math.max(1, parseInt(a[0]) || 1); Run.dangerPts = (n - 1) * 45; Run.level = n; this.print('✔ ระดับ ' + n, 'ok'); } },
+    level: { u: '<n>', d: 'ตั้งระดับอันตราย', fn(a) { if (!this.needRun()) return; const n = Math.max(1, parseInt(a[0]) || 1); Run.dangerPts = (n - 1) * (Run.dangerStep || 45); Run.level = n; this.print('✔ ระดับ ' + n, 'ok'); } },
     wave: { d: 'เรียกฝูงซอมบี้ทันที', fn() { if (!this.needRun()) return; Run.waveT = 0.1; this.print('✔ ฝูงกำลังมา', 'ok'); } },
     nowave: { d: 'หยุดฝูง/ซอมบี้เกิดเพิ่ม', fn() { if (!this.needRun()) return; Run.waveT = 1e9; Run.trickleT = 1e9; this.print('✔ หยุดการเกิดซอมบี้', 'ok'); } },
     reveal: { d: 'เปิดแผนที่ทั้งหมด + ไฟฟ้า', fn() { if (!this.needRun()) return; for (const rm of Run.map.rooms) rm.revealed = true; Run.powered = true; this.print('✔ เปิดแผนที่', 'ok'); } },
