@@ -8,6 +8,7 @@ Usage (in Terminal):
     python3 assets/gen_gemini.py --only char_jake,zombie_walker0   (also makes their pose sprites: walk, gun, pistol, melee, climb, dead / attack)
     python3 assets/gen_gemini.py --only walkframes  # pose-guided 6-frame walk cycles (assets/poses)
     python3 assets/gen_gemini.py --only walkarms    # fix arm swing on those frames (edits each _wf frame)
+    python3 assets/gen_gemini.py --only wear        # clothing icons (shirts / trousers with pockets)
     python3 assets/gen_gemini.py --only pistolbare  # pistol pose with empty hands (any handgun is drawn in-game)
     python3 assets/gen_gemini.py --redo furn_bed  # regenerate specific files
     python3 assets/gen_gemini.py --list           # show all names
@@ -119,6 +120,7 @@ def main():
         if "pistolbare" in only and n.endswith("_pistol_bare"): base = "pistolbare"
         if "crouch" in only and "_crouch" in n: base = "crouch"
         if "walksheet" in only and n.endswith("_walksheet"): base = "walksheet"
+        if "wear" in only and (n.startswith("icon_top_") or n.startswith("icon_pants_")): base = "wear"
         if "rig" in only and (n.endswith("_body") or n.endswith("_leg") or n.endswith("_arm")) and n.startswith("char_"): base = "rig"
         sel = not only or n in only or base in only or n in redo
         return sel and (n in redo or base in redo or not os.path.exists(os.path.join(OUT, n + ".png")))

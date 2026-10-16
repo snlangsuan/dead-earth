@@ -330,3 +330,91 @@ button { font-family: inherit; }
 .attmini img, .attmini svg { max-width: 15px; max-height: 15px; }
 .gitem .attmini { position: absolute; left: 4px; bottom: 4px; pointer-events: none; }
 .btn.off { opacity: .55; }
+
+.loc .lvb { font-size: 11px; font-weight: 700; color: #cfd6de; background: rgba(255,255,255,.08); padding: 1px 6px; flex-shrink: 0; }
+.loc .lvb.boss { color: #ffb3a8; background: rgba(192,57,43,.25); }
+
+/* tutorial hint box + highlight */
+#tutbox { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 9000; width: min(560px, 92vw); padding: 12px 16px; background: rgba(14,16,20,.94); box-shadow: inset 0 0 0 1px #f2b01e, 0 6px 24px rgba(0,0,0,.5); color: #e8e8e8; font-size: 14px; line-height: 1.55; display: none; }
+#tutbox .tk { font-size: 11px; color: #f2b01e; font-weight: 700; letter-spacing: .5px; margin-bottom: 4px; }
+#tutbox kbd { display: inline-block; min-width: 18px; padding: 0 5px; margin: 0 1px; font: 700 12px/18px "Chakra Petch", sans-serif; text-align: center; color: #111; background: #e8e8e8; box-shadow: 0 2px 0 #888; }
+#tutbox .tb { display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px; }
+.tut-hl { position: relative; z-index: 8000; box-shadow: 0 0 0 3px #f2b01e, 0 0 18px rgba(242,176,30,.6) !important; }
+
+/* themed confirm dialog */
+#dlg { position: fixed; inset: 0; display: none; z-index: 9500; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(0,0,0,.5), rgba(0,0,0,.82)); }
+#dlg.show { display: flex; }
+#dlg .dlgp { min-width: 320px; max-width: 460px; }
+#dlg .dlgp .lines { margin: 6px 0 12px; color: #cfd6de; line-height: 1.6; }
+#dlg .dlgp .row { justify-content: flex-end; }
+#tutbox.run { top: 170px; left: 14px; transform: none; width: min(380px, 60vw); }
+
+/* opening story */
+#story { position: fixed; inset: 0; z-index: 9800; background: #050608 center/cover no-repeat; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+#story::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.88) 60%, #000); }
+#story .sbox { position: relative; max-width: 720px; padding: 0 28px; text-align: center; }
+#story .sk { font: 700 13px "Chakra Petch", sans-serif; letter-spacing: 3px; color: #f2b01e; text-transform: uppercase; margin-bottom: 18px; opacity: 0; animation: sfade .6s forwards; }
+#story p { font-size: 22px; line-height: 1.7; color: #e8e2d4; margin: 0 0 10px; opacity: 0; transform: translateY(8px); animation: sfade .9s forwards; text-shadow: 0 2px 8px #000; }
+#story p b { color: #ffd37a; } #story p i { color: #ff9a8a; font-style: normal; }
+#story .sfoot { position: absolute; bottom: 40px; left: 0; right: 0; display: flex; gap: 12px; align-items: center; justify-content: center; }
+#story .sdots { color: #8a8478; letter-spacing: 4px; margin-right: 12px; }
+@keyframes sfade { to { opacity: 1; transform: none; } }
+#tutbox .tdir { margin-top: 6px; color: #f2b01e; font-weight: 700; font-size: 13px; min-height: 1em; }
+#tutbox small { color: #aab; }
+
+/* key bindings */
+.panel.settings { max-height: 88vh; overflow-y: auto; }
+.keygrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+.keyrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #cfd3da; }
+.keyb { min-width: 74px; padding: 4px 10px; font: 700 12px "Chakra Petch", sans-serif; color: #111; background: #e8e8e8; border: 0; box-shadow: 0 2px 0 #888; cursor: pointer; }
+.keyb.chg { background: #f2b01e; box-shadow: 0 2px 0 #9a6c08; }
+.keyb.wait { background: #2a2f38; color: #f2b01e; box-shadow: inset 0 0 0 1px #f2b01e; }
+.keyreset { float: right; margin-top: -4px; }
+
+.settabs { display: flex; gap: 2px; margin: 4px 0 12px; border-bottom: 1px solid #3a3f48; }
+.settab { padding: 7px 16px; font: 600 14px "Chakra Petch", Kanit, sans-serif; color: #9aa0aa; background: transparent; border: 0; border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -1px; }
+.settab:hover { color: #e8e8e8; }
+.settab.on { color: #f2b01e; border-bottom-color: #f2b01e; }
+.setpane { min-height: 220px; }
+.keyhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+
+/* ---------- SCUM-style inventory: world | character | pockets ---------- */
+.loadout.scum { grid-template-columns: minmax(260px, 1fr) 380px auto; align-items: start; }
+.runpanel.scum { width: min(1360px, 98vw); max-height: 94vh; }
+.sc-cols { display: grid; grid-template-columns: 330px 380px auto; justify-content: center; gap: 14px; overflow: auto; align-items: start; }
+.sc-near, .sc-pock { display: flex; flex-direction: column; gap: 10px; min-width: 0; max-height: calc(94vh - 70px); overflow-y: auto; }
+.sc-doll { display: flex; flex-direction: column; gap: 10px; background: var(--panel); border: 1px solid var(--line); padding: 12px; }
+.kgbar { display: flex; align-items: center; gap: 10px; font: 600 12px "Chakra Petch", sans-serif; color: #cfd3da; }
+.kgbar > div { position: relative; flex: 1; height: 8px; background: rgba(255,255,255,.08); }
+.kgbar i { position: absolute; left: 0; top: 0; bottom: 0; background: #7fc87f; }
+.kgbar s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: rgba(255,255,255,.35); text-decoration: none; }
+.kgbar.heavy { color: #f2b01e; } .kgbar.heavy i { background: #f2b01e; }
+.kgbar.over { color: #ff6a4a; } .kgbar.over i { background: #ff6a4a; }
+.figure { display: grid; grid-template-columns: 76px 1fr 76px; align-items: center; gap: 6px; min-height: 250px;
+  background: radial-gradient(ellipse at 50% 60%, rgba(242,176,30,.07), transparent 65%); }
+.fcol { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.fimg { display: flex; justify-content: center; }
+.fimg canvas { filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
+.wslot { position: relative; width: 70px; height: 70px; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center; cursor: grab; }
+.wslot.empty { cursor: default; }
+.wslot .wl { font-size: 11px; color: rgba(255,255,255,.28); }
+.wslot .wic { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; }
+.wslot .wic img, .wslot .wic canvas { max-width: 52px; max-height: 52px; }
+.wslot .wbar { position: absolute; left: 6px; right: 6px; bottom: 5px; height: 3px; background: rgba(0,0,0,.5); }
+.wslot .wbar i { display: block; height: 100%; background: #7fb8ff; }
+.wslot.hover, .cwin.hover, .wcard.hover { box-shadow: inset 0 0 0 2px #f2b01e; }
+.wrow3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.wrow3 .icard { min-height: 78px; }
+.wcard.empty .meta { font-size: 11px; color: rgba(255,255,255,.3); }
+.cwrow { display: flex; gap: 10px; flex-wrap: wrap; }
+.cwin { background: var(--panel); border: 1px solid var(--line); padding: 6px 8px 8px; align-self: flex-start; }
+.cwh { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 12px; color: #cfd3da; min-height: 24px; }
+.cwh b { font-weight: 600; } .cwh .cwc { margin-left: auto; color: #8a909a; font-size: 11px; }
+.cwh .cwi { width: 22px; height: 22px; display: inline-flex; } .cwh .cwi img, .cwh .cwi canvas { max-width: 22px; max-height: 22px; }
+.cwh.click { cursor: pointer; } .cwh.click:hover b { color: #f2b01e; }
+.lootwin { align-self: stretch; }
+.lootwin:not(.open) .grid { opacity: .75; }
+.lootwin.open { box-shadow: inset 0 0 0 1px rgba(242,176,30,.5); }
+.sc-near .groundzone { min-height: 54px; }
+@media (max-width: 1150px) { .loadout.scum, .sc-cols { grid-template-columns: 1fr 380px; } .sc-pock { grid-column: 1 / -1; max-height: none; } }
+

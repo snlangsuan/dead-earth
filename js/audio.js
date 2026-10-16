@@ -22,6 +22,9 @@ const Snd = {
     // shared reverb (generated impulse response)
     this.verb = c.createConvolver(); this.verb.buffer = this.impulse(2.8, 2.6);
     this.verbIn = c.createGain(); this.verbIn.gain.value = 1; this.verbIn.connect(this.verb); this.verb.connect(this.master);
+    // reverb sends go through their own volume so the music / effects sliders also silence the echo
+    this.musicSend = c.createGain(); this.musicSend.connect(this.verbIn);
+    this.sfxSend = c.createGain(); this.sfxSend.connect(this.verbIn);
     this.noiseBuf = this.makeNoise(2);
     this.ok = true; this.applyVolumes();
     Music.start();
@@ -32,6 +35,8 @@ const Snd = {
     this.master.gain.setTargetAtTime(s.mute ? 0 : s.master, t, 0.05);
     this.musicBus.gain.setTargetAtTime(s.music * 0.55, t, 0.1);
     this.sfxBus.gain.setTargetAtTime(s.sfx, t, 0.05);
+    this.musicSend.gain.setTargetAtTime(s.music * 0.55, t, 0.1);
+    this.sfxSend.gain.setTargetAtTime(s.sfx, t, 0.05);
   },
   makeNoise(sec) {
     const c = this.ctx, b = c.createBuffer(1, c.sampleRate * sec, c.sampleRate), d = b.getChannelData(0);
@@ -56,7 +61,7 @@ const Snd = {
     const c = this.ctx, g = c.createGain(); g.gain.value = vol;
     const p = c.createStereoPanner ? c.createStereoPanner() : null;
     if (p) { p.pan.value = U.clamp(pan || 0, -1, 1); g.connect(p); p.connect(this.sfxBus); } else g.connect(this.sfxBus);
-    if (wet) { const s = c.createGain(); s.gain.value = wet; g.connect(s); s.connect(this.verbIn); }
+    if (wet) { const s = c.createGain(); s.gain.value = wet; g.connect(s); s.connect(this.sfxSend); }
     this.voices++; setTimeout(() => this.voices--, 1200);
     return g;
   },
@@ -188,7 +193,7 @@ const Music = {
     const c = Snd.ctx;
     // two detuned saw drones through a slow low-pass sweep
     const g = c.createGain(); g.gain.value = 0.0001; g.connect(Snd.musicBus);
-    const send = c.createGain(); send.gain.value = 0.5; g.connect(send); send.connect(Snd.verbIn);
+    const send = c.createGain(); send.gain.value = 0.5; g.connect(send); send.connect(Snd.musicSend);
     const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400; lp.Q.value = 3; lp.connect(g);
     const oscs = [0, 7, -12].map((d, i) => { const o = c.createOscillator(); o.type = i === 2 ? 'sine' : 'sawtooth'; o.detune.value = (i ? 1 : -1) * 7; const og = c.createGain(); og.gain.value = i === 2 ? 0.5 : 0.18; o.connect(og); og.connect(lp); o.start(); return o; });
     const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 0.05; lg.gain.value = 250; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
@@ -237,7 +242,7 @@ const Music = {
   pick() { const s = this.scales[this.mode] || this.scales.title; return s[Math.floor(Math.random() * s.length)] + (Math.random() < 0.25 ? 12 : 0); },
   hz(n) { return 440 * Math.pow(2, (n - 69) / 12); },
   pluck(t, n) {
-    const c = Snd.ctx, g = c.createGain(); g.connect(Snd.musicBus); const s = c.createGain(); s.gain.value = 0.7; g.connect(s); s.connect(Snd.verbIn);
+    const c = Snd.ctx, g = c.createGain(); g.connect(Snd.musicBus); const s = c.createGain(); s.gain.value = 0.7; g.connect(s); s.connect(Snd.musicSend);
     const f = this.hz(n), o1 = c.createOscillator(), o2 = c.createOscillator(); o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = f; o2.frequency.value = f * 2.005;
     const og2 = c.createGain(); og2.gain.value = 0.25; o2.connect(og2); og2.connect(g); o1.connect(g);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0005, t + 2.6);
@@ -245,7 +250,7 @@ const Music = {
   },
   pad(t) {
     const c = Snd.ctx, s = this.scales[this.mode] || this.scales.title, root = s[0] - 12;
-    const g = c.createGain(); g.connect(Snd.musicBus); const sd = c.createGain(); sd.gain.value = 0.8; g.connect(sd); sd.connect(Snd.verbIn);
+    const g = c.createGain(); g.connect(Snd.musicBus); const sd = c.createGain(); sd.gain.value = 0.8; g.connect(sd); sd.connect(Snd.musicSend);
     const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(g);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 2); g.gain.exponentialRampToValueAtTime(0.0005, t + 7);
     for (const iv of [0, 3, 7]) { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = this.hz(root + iv); o.detune.value = Math.random() * 14 - 7; o.connect(lp); o.start(t); o.stop(t + 7.2); }

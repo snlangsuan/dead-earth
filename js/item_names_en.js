@@ -5,7 +5,7 @@ const ITEM_EN = {
   pistol: '9mm Pistol', revolver: '.44 Revolver', smg: 'SMG Submachine Gun', shotgun: 'Shotgun', crossbow: 'Crossbow', rifle: 'Assault Rifle', sniper: 'Sniper Rifle',
   a9: '9mm Ammo Bullet', a44: '.44 Ammo Bullet', a12: 'Shotgun Shells Ammo', a556: '5.56 Rifle Ammo Bullet', a762: '7.62 Sniper Ammo Bullet', bolt: 'Crossbow Bolts Ammo',
   pack_school: 'School Bag Backpack', pack_day: 'Daypack Backpack', pack_hiking: 'Hiking Backpack', pack_duffel: 'Duffel Bag', pack_military: 'Military Backpack', pack_raid: 'Tactical Raid Backpack',
-  repairkit: 'Weapon Repair Kit', grenade: 'Hand Grenade', pipebomb: 'Pipe Bomb', spiketrap: 'Nail Spike Trap', mine: 'Land Mine',
+  repairkit: 'Weapon Repair Kit', sewkit: 'Sewing Kit', grenade: 'Hand Grenade', pipebomb: 'Pipe Bomb', spiketrap: 'Nail Spike Trap', mine: 'Land Mine',
   gunparts: 'Gun Parts', scope: 'Scope', extmag: 'Extended Magazine', silencer: 'Silencer Suppressor', grip: 'Foregrip',
   scrap: 'Scrap Metal', cloth: 'Cloth', plank: 'Wood Plank', lockpick: 'Lockpick', nails: 'Nails', chem: 'Chemicals', elec: 'Electronics',
   canned: 'Canned Food', water: 'Bottled Water', bar: 'Chocolate Bar', mre: 'MRE Ration', stew: 'Hot Stew',

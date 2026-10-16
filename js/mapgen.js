@@ -40,7 +40,7 @@ const FURN = {
   bag:        { n: 'ของบนพื้น', w: 40, h: 26, loot: null },
   // decorations (no loot)
   lamp: { w: 26, h: 120 }, plant: { w: 34, h: 66 }, toilet: { w: 40, h: 50 }, sink: { w: 50, h: 70 },
-  bench: { w: 110, h: 40 }, streetlamp: { w: 60, h: 200 }, barrel: { w: 40, h: 56 }, vent: { w: 70, h: 50 },
+  bench: { w: 110, h: 40 }, streetlamp: { w: 60, h: 200 }, barrel: { w: 40, h: 56 }, vent: { w: 110, h: 50 },
 };
 
 // how many times a piece of furniture can be searched [min, max] (default 1) — each pass takes longer
@@ -89,10 +89,11 @@ const ROOM_TYPES = {
 
 function floorY(f) { return -f * FH; }
 
-function generateLocation(seed, theme, d) {
+function generateLocation(seed, theme, d, floors) {
   const r = U.rng(seed);
   const T = THEMES[theme];
-  const F = U.clamp(2 + Math.floor(d / 6) + U.ri(r, 0, 1), 2, 6);        // floors above ground (incl. ground)
+  const rf = U.clamp(2 + Math.floor(d / 6) + U.ri(r, 0, 1), 2, 6);
+  const F = floors || rf;                                                 // floors above ground (incl. ground): fixed per location when given
   const C = U.clamp(3 + Math.floor(d / 8) + U.ri(r, 0, 2), 3, 7);        // columns
   const BW = C * CELL;
   const rooms = [];

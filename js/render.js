@@ -103,8 +103,12 @@ const R = {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     if (!run || !run.map) { MenuFX.draw(this, dt); return; }
     const p = run.p, map = run.map;
-    const z = U.clamp(this.H / (FH * 2.55), 0.5, 1.5);
-    this.look = (this.look || 0) + ((p.hidden ? 0 : p.facing * 90) - (this.look || 0)) * Math.min(1, dt * 2.5);
+    const z0 = U.clamp(this.H / (FH * 2.55), 0.5, 1.5);
+    // aiming pushes the camera ahead (and long guns zoom out) so you can see what you're aiming at
+    const av = p.aiming && typeof Aim !== 'undefined' ? Aim.view(run, z0) : null;
+    this.aimZ = (this.aimZ || 1) + ((av ? av.zoom : 1) - (this.aimZ || 1)) * Math.min(1, dt * 4);
+    const z = z0 * this.aimZ;
+    this.look = (this.look || 0) + ((p.hidden ? 0 : p.facing * (90 + (av ? av.look : 0))) - (this.look || 0)) * Math.min(1, dt * (av ? 4 : 2.5));
     const tx = p.x + this.look, ty = run.yOf(p) - FH * 0.42;
     if (!this.cam) this.cam = { x: tx, y: ty, z };
     this.cam.z = z;
@@ -613,7 +617,7 @@ const R = {
     const flick = p.hurtT > 0 && Math.floor(p.hurtT * 30) % 2;
     if (flick) this.ctx.globalAlpha = 0.5;
     const base = 'char_' + G.char;
-    const crouch = (p.aimDownT > 0 || (!p.moving && run.downTarget && run.downTarget())) && w && ITEMS[w.id].cls !== 'melee';
+    const crouch = (p.aimDownT > 0 || ((!p.moving || p.aiming) && run.wantDown && run.wantDown(true))) && w && ITEMS[w.id].cls !== 'melee';
     p._crouch = crouch;
     const realCrouch = crouch && !p.climb && Sprites.meta(base + '_crouch_bare') && Override.get(base + '_crouch_bare');   // kneeling pose (Gemini) when this character has one
     if (crouch && !realCrouch) { this.ctx.save(); this.ctx.translate(p.x, y); this.ctx.scale(1, 0.86); this.ctx.translate(-p.x, -y); }
@@ -1003,12 +1007,12 @@ const R = {
     pill(dx, dy, 220, 52);
     ctx.fillStyle = run.level >= run.bossLvl - 1 ? '#c0392b' : '#8e2b2b';
     ctx.beginPath(); ctx.arc(dx + 26, dy + 26, 19, 0, 7); ctx.fill();
-    const frac = (run.dangerPts % 45) / 45;
+    const frac = run.level >= run.maxLevel ? 1 : (run.dangerPts % run.dangerStep) / run.dangerStep;
     ctx.strokeStyle = '#ff6a5c'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(dx + 26, dy + 26, 21, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.font = '800 18px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(run.level, dx + 26, dy + 33);
     ctx.textAlign = 'left'; ctx.font = '600 13px "Chakra Petch", Kanit, sans-serif'; ctx.fillStyle = '#ffb3a8'; ctx.fillText('ระดับอันตราย', dx + 54, dy + 20);
     ctx.font = '400 12px "Chakra Petch", Kanit, sans-serif'; ctx.fillStyle = '#ccc';
-    if (!run.bossSpawned) ctx.fillText(`บอสมาเมื่อ: ระดับ ${run.bossLvl} หรือฆ่า ${run.kills}/${run.bossKills}`, dx + 54, dy + 38);
+    if (!run.bossSpawned) ctx.fillText(run.bossLvl >= 99 ? `ไม่มีบอส · สูงสุดระดับ ${run.maxLevel}` : `บอสมาเมื่อ: ระดับ ${run.bossLvl} หรือฆ่า ${run.kills}/${run.bossKills}`, dx + 54, dy + 38);
     else if (!run.bossKilled) { ctx.fillStyle = '#ff6a5c'; ctx.fillText(`☠ บอสอยู่ในอาคาร${(run.bosses || []).filter(b => !b.dead).length > 1 ? ' ×' + run.bosses.filter(b => !b.dead).length : ''}! (ไม่ต้องสู้ก็ได้)`, dx + 54, dy + 38); }
     else { ctx.fillStyle = '#9dff8a'; ctx.fillText('✔ กำจัดบอสแล้ว', dx + 54, dy + 38); }
     // wave timer
@@ -1018,7 +1022,7 @@ const R = {
       ctx.textAlign = 'left'; ctx.font = '700 14px "Chakra Petch", Kanit, sans-serif';
       const mm = Math.max(0, Math.ceil(run.waveT)), t = `${Math.floor(mm / 60)}:${String(mm % 60).padStart(2, '0')}`;
       ctx.fillStyle = warn ? '#fff' : raid ? '#ff8a6a' : '#ddd';
-      ctx.fillText(raid && !warn ? `🧟 ฝูงกำลังบุก! · ถัดไป ${t}` : `🧟 ฝูงซอมบี้ถัดไป  ${t}`, dx + 14, wy + 22);
+      ctx.fillText(run.waveT > 1e6 ? '🧟 ไม่มีฝูงซอมบี้ (ด่านสอนเล่น)' : raid && !warn ? `🧟 ฝูงกำลังบุก! · ถัดไป ${t}` : `🧟 ฝูงซอมบี้ถัดไป  ${t}`, dx + 14, wy + 22);
       if (warn) {
         const a = 0.75 + 0.25 * Math.sin(run.time * 7);
         ctx.globalAlpha = a; ctx.textAlign = 'center';
@@ -1043,11 +1047,13 @@ const R = {
     const oh = 40 + Math.max(1, objs.length) * 24;
     pill(ox, oy, ow, oh);
     ctx.textAlign = 'left'; ctx.fillStyle = '#ffd37a'; ctx.font = '700 14px "Chakra Petch", Kanit, sans-serif';
-    ctx.fillText(run.farm ? `${run.loc.n} (ฟาร์มของ)` : `${run.loc.n}`, ox + 14, oy + 24);
+    ctx.fillText(`Lv ${run.lv} · ${run.loc.n}` + (run.farm ? ' (ฟาร์มของ)' : ''), ox + 14, oy + 24);
     ctx.font = '400 13px "Chakra Petch", Kanit, sans-serif';
     if (!objs.length) { ctx.fillStyle = '#bbb'; ctx.fillText(run.restricted ? 'พื้นที่หวงห้าม — หาของแล้วไปจุดอพยพ' : 'หาของได้อิสระ แล้วไปจุดอพยพเพื่อกลับฐาน', ox + 14, oy + 48); }
     objs.forEach((o, i) => {
       const yy = oy + 48 + i * 24;
+      // a mission item already in the backpack: found, now carry it out (it only counts once you extract)
+      if (o.type === 'item' && o.done) { ctx.fillStyle = '#8dff8a'; ctx.fillText(`✔ ได้${ITEMS[o.item].n}แล้ว — นำกลับฐาน`, ox + 14, yy); return; }
       ctx.fillStyle = o.done ? '#8dff8a' : '#e8e8e8';
       ctx.fillText((o.done ? '✔ ' : '◻ ') + o.label + (o.target > 1 ? `  ${o.cur}/${o.target}` : ''), ox + 14, yy);
     });
@@ -1101,7 +1107,7 @@ const R = {
     ctx.fillStyle = used >= p.cap ? '#ff6a5c' : '#fff'; ctx.font = '700 13px "Chakra Petch", Kanit, sans-serif'; ctx.fillText(`${used}/${p.cap}`, qx + 45, qy + 58);
     // hints
     ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '400 12px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(`A/D เดิน · W/S ปีนบันได · Shift วิ่ง · Z ย่อง · คลิก/Space โจมตี · R รีโหลด · Q ค้น · H ซ่อน · B ค้าง บาริเคด ${p.mods.engineer ? '· C ประดิษฐ์ ' : ''}· 4-9 ปุ่มลัด · Tab เป้ · ออกได้ที่จุดอพยพสีเขียว · Esc หยุด`, W - 14, qy - 10);
+    ctx.fillText(`${Keys.lbl('left')}/${Keys.lbl('right')} เดิน · ${Keys.lbl('up')}/${Keys.lbl('down')} ปีนบันได · ${Keys.lbl('sprint')} วิ่ง · ${Keys.lbl('sneak')} ย่อง · คลิก/${Keys.lbl('attack')} โจมตี · คลิกขวาค้าง เล็ง · ${Keys.lbl('reload')} รีโหลด · ${Keys.lbl('search')} ค้น · ${Keys.lbl('hide')} ซ่อน · ${Keys.lbl('barricade')} ค้าง บาริเคด ${p.mods.engineer ? '· ' + Keys.lbl('craft') + ' ประดิษฐ์ ' : ''}· 4-9 ปุ่มลัด · ${Keys.lbl('inv')} เป้ · ออกได้ที่จุดอพยพสีเขียว · Esc หยุด`, W - 14, qy - 10);
     if (run.pick) this.drawPickUI(run);
     this.drawCraftUI(run);
     this.drawExtractHUD(run);

@@ -184,21 +184,15 @@ const UIRun = {
   openPause() {
     Run.panel = 'pause';
     const o = this.el(); o.className = 'show'; o.innerHTML = '';
-    const panel = U.el('div', { class: 'panel small' },
-      U.el('h2', null, 'หยุดเกม'),
-      U.el('div', { class: 'help' }, U.el('div', { html: `
-        <b>วิธีเล่น</b><br>
-        • <b>A/D</b> เดิน · <b>W/S</b> ปีนบันได · <b>Shift</b> วิ่ง · <b>Z ค้าง</b> ย่อง<br>• เสียง: ย่อง = เงียบและซอมบี้มองเห็นยากขึ้น · เดิน = ซอมบี้ใกล้ ๆ อาจได้ยิน (~40–60%) · วิ่ง / ค้นของ / เปิดปิดประตู = ได้ยินง่าย (60%+)<br>
-        • <b>คลิกซ้าย / Space</b> โจมตี (ปืนเล็งเป้าอัตโนมัติไปทางที่หันอยู่) · <b>เมาส์</b> เลือกทิศที่หัน<br>
-        • <b>1 2 3</b> สลับอาวุธ · <b>R</b> รีโหลด<br>
-        • <b>Q</b> (หรือ <b>E</b>) ค้นเฟอร์นิเจอร์ — การค้นมีเสียง ขยับ = หยุดค้น · <b>E</b> เปิดดู/ช่วยคน · <b>F</b> เก็บทั้งหมด<br>
-        • <b>Tab</b> เปิดเป้<br>
-        • <b>จุดอพยพ (แสงสีเขียว)</b> = ยืนรอนับถอยหลังเพื่อกลับฐาน มีที่ถนนฝั่งขวาและลาน ฮ. บนดาดฟ้า<br>• <b>4-9</b> = ปุ่มลัดใช้ไอเทม (จัดเองได้ในเป้ หรือหน้าเตรียมตัวที่ฐาน) · <b>E</b> ที่ประตู = เปิด/ปิด · <b>B ค้าง</b> = เสริมประตู<br>• บอสไม่ต้องสู้ก็ได้ ฆ่าแล้วได้ของดีและกุญแจเข้าพื้นที่หวงห้าม<br>
-        • ยิ่งอยู่นาน/ยิงเสียงดัง ระดับอันตรายยิ่งสูง · ถ้าตาย เสียของในเป้และเงินรอบนี้` })),
-      U.el('div', { class: 'row' },
-        U.el('button', { class: 'btn primary', onclick: () => this.close() }, 'เล่นต่อ'),
-        U.el('button', { class: 'btn', onclick: () => UI.openSettings(() => this.openPause()) }, 'ตั้งค่า'),
-        U.el('button', { class: 'btn danger', onclick: () => { if (confirm('ทิ้งภารกิจ? จะนับเป็นการตาย (เสียของในเป้)')) { this.close(); Run.die('abandon'); } } }, 'ทิ้งภารกิจ')));
+    // same look as the title screen: stencil heading, left-aligned menu buttons
+    o.className = 'show pause';
+    const panel = U.el('div', { class: 'titlebox pausemenu' },
+      U.el('div', { class: 'logo' }, 'PAUSED'),
+      U.el('div', { class: 'logo2' }, 'หยุดเกม'),
+      U.el('div', { class: 'tag' }, `Lv ${Run.lv} · ${Run.loc.n} — ${Run.stage.n}`),
+      U.el('button', { class: 'btn primary big', onclick: () => this.close() }, 'เล่นต่อ'),
+      U.el('button', { class: 'btn big', onclick: () => UI.openSettings(() => this.openPause()) }, 'ตั้งค่า'),
+      U.el('button', { class: 'btn big quit', onclick: () => UI.ask('ทิ้งภารกิจ?', 'จะนับเป็นการตาย — ของในเป้หายหมด', 'ทิ้งภารกิจ', () => { this.close(); Run.die('abandon'); }, true) }, 'ทิ้งภารกิจ'));
     o.appendChild(panel);
   },
 

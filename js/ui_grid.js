@@ -35,6 +35,31 @@ const GridUI = {
     this.grids.push({ el, hl, list, g, onChange: opts.onChange });
     return el;
   },
+  // one pocket (region) of a region grid, drawn as its own little grid; coordinates stay global in the list
+  renderRegion(list, g, R, opts) {
+    const C = this.CELL;
+    const el = U.el('div', { class: 'bgrid', style: { width: R.c * C + 'px', height: R.r * C + 'px', backgroundSize: `${C}px ${C}px` } });
+    const hl = U.el('div', { class: 'ghl' }); el.appendChild(hl);
+    // torn cells (damaged clothing / armor) can't hold anything
+    for (let i = R.c * R.r - (R.torn || 0); i < R.c * R.r; i++)
+      el.appendChild(U.el('div', { class: 'gtorn', title: 'ขาด — ซ่อมที่ฐานเพื่อใช้ช่องนี้', style: { left: (i % R.c) * C + 'px', top: Math.floor(i / R.c) * C + 'px', width: C + 'px', height: C + 'px' } }));
+    // the next cell to go: tinted red from the bottom as the piece wears down
+    if (R.wf > 0.02) {
+      const i = R.c * R.r - (R.torn || 0) - 1;
+      el.appendChild(U.el('div', { class: 'gwear', title: `กำลังขาด ${Math.round(R.wf * 100)}% — ซ่อมที่ฐานด้วยผ้า`, style: { left: (i % R.c) * C + 'px', top: Math.floor(i / R.c) * C + C * (1 - R.wf) + 'px', width: C + 'px', height: C * R.wf + 'px' } }));
+    }
+    for (const e of list) {
+      if (!Wear.inReg(e, R)) continue;
+      const [w, h] = Inv.dims(e), it = ITEMS[e.id];
+      const ie = U.el('div', { class: 'gitem t-' + it.t + (it.rank ? ' rk' + it.rank : '') + (opts.selected === e ? ' sel' : ''), title: it.n + (it.desc ? ' — ' + it.desc : ''), style: { left: (e.gx - R.x) * C + 1 + 'px', top: (e.gy - R.y) * C + 1 + 'px', width: w * C - 2 + 'px', height: h * C - 2 + 'px' } });
+      ie.innerHTML = this.itemInner(e, w, h);
+      this.makeDraggable(ie, { from: 'grid', list, entry: e, g }, () => opts.onSelect && opts.onSelect(e));
+      if (opts.onContext) ie.addEventListener('contextmenu', ev => { ev.preventDefault(); if (!this.drag && !this.splitDown) opts.onContext(e, ev); });
+      el.appendChild(ie);
+    }
+    this.grids.push({ el, hl, list, g, ox: R.x, oy: R.y, onChange: opts.onChange });
+    return el;
+  },
   // register a drop zone. onDrop(src) returns true if handled
   zone(el, onDrop) { el.classList.add('dropzone'); this.zones.push({ el, onDrop }); return el; },
 
@@ -100,7 +125,7 @@ const GridUI = {
       if (!G0.el.isConnected) continue;
       const r = G0.el.getBoundingClientRect();
       if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) continue;
-      const x = Math.round((gl - r.left) / C), y = Math.round((gt - r.top) / C);
+      const x = Math.round((gl - r.left) / C) + (G0.ox || 0), y = Math.round((gt - r.top) / C) + (G0.oy || 0);
       return { grid: G0, x, y };
     }
     let best = null, ba = Infinity;   // the smallest zone under the pointer wins (an attachment slot inside a gun card)
@@ -134,7 +159,9 @@ const GridUI = {
     if (t && t.grid) {
       const [w, h] = this.dragDims();
       const ok = this.mergeTarget(t.grid, t.x, t.y) || Inv.fits(t.grid.list, t.grid.g, d.src.entry, t.x, t.y, d.rot ? 1 : 0, d.src.entry);
-      Object.assign(t.grid.hl.style, { display: 'block', left: t.x * C + 'px', top: t.y * C + 'px', width: w * C + 'px', height: h * C + 'px' });
+      const bad = d.src.noGrid;
+      Object.assign(t.grid.hl.style, { display: 'block', left: (t.x - (t.grid.ox || 0)) * C + 'px', top: (t.y - (t.grid.oy || 0)) * C + 'px', width: w * C + 'px', height: h * C + 'px' });
+      if (bad) { t.grid.hl.className = 'ghl bad'; return; }
       t.grid.hl.className = 'ghl ' + (ok ? 'ok' : 'bad');
     } else if (t && t.zone) t.zone.el.classList.add('hover');
   },
@@ -158,7 +185,13 @@ const GridUI = {
       else if (piece.u !== e.u) e.u = piece.u;   // a use was spent from a multi-use item (repair kit)
       this.refresh(); return;
     }
+    if (src.noGrid) { if (src.onNowhere) src.onNowhere(); this.refresh(); return; }   // worn clothing can't go into its own pockets
     const G0 = t.grid, rot = d.rot ? 1 : 0;
+    if (this.itemDrop) {   // dropped right onto another item (e.g. a sewing kit onto a shirt)
+      const r = G0.el.getBoundingClientRect(), cx = Math.floor((ev.clientX - r.left) / this.CELL) + (G0.ox || 0), cy = Math.floor((ev.clientY - r.top) / this.CELL) + (G0.oy || 0);
+      const o = G0.list.find(q => q !== e && q.gx != null && (([w, h]) => cx >= q.gx && cy >= q.gy && cx < q.gx + w && cy < q.gy + h)(Inv.dims(q)));
+      if (o && this.itemDrop(src, o, G0)) { this.refresh(G0); return; }
+    }
     this.drag = d; const merge = this.mergeTarget(G0, t.x, t.y); this.drag = null;
     if (merge) {
       const room = it.st - merge.q;
@@ -249,6 +282,24 @@ const GridUI = {
     document.body.appendChild(box); this.info = box;
     setTimeout(() => { this._infoClose = () => this.closeInfo(); addEventListener('pointerdown', this._infoClose, true); this._infoKey = k => { if (k.code === 'Escape') this.closeInfo(); }; addEventListener('keydown', this._infoKey, true); }, 0);
   },
+  // hover popup: same content as showInfo, follows the card, never blocks clicks
+  hoverable(el, e) {
+    let t = 0;
+    el.addEventListener('mouseenter', ev => { clearTimeout(t); t = setTimeout(() => { if (!this.info && !this.drag && el.isConnected) this.showHover(e, el); }, 250); });
+    el.addEventListener('mouseleave', () => { clearTimeout(t); this.hideHover(); });
+  },
+  showHover(e, el) {
+    this.hideHover();
+    const it = ITEMS[e.id], box = U.el('div', { class: 'iteminfo hover' });
+    box.innerHTML = `<div class="ii-h"><div class="ii-ic">${Art.icon(e.id)}</div><div><b>${it.n}${e.lvl ? ' +' + e.lvl : ''}</b>${e.q > 1 ? ` <span>×${e.q}</span>` : ''}</div></div>` +
+      (it.desc ? `<div class="ii-d">${it.desc}</div>` : '') + `<table>${this.infoLines(e).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>`;
+    document.body.appendChild(box); this.hover = box;
+    const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+    let x = r.right + 8; if (x + b.width > innerWidth - 8) x = r.left - b.width - 8; if (x < 8) x = 8;
+    let y = r.top; if (y + b.height > innerHeight - 8) y = innerHeight - b.height - 8;
+    Object.assign(box.style, { left: x + 'px', top: Math.max(8, y) + 'px', transform: 'none' });
+  },
+  hideHover() { if (this.hover) { this.hover.remove(); this.hover = null; } },
   closeInfo() { if (this.info) { this.info.remove(); this.info = null; } if (this._infoClose) { removeEventListener('pointerdown', this._infoClose, true); removeEventListener('keydown', this._infoKey, true); this._infoClose = null; } },
   closeMenu() { if (this.menu) { this.menu.remove(); this.menu = null; } if (this._close) { removeEventListener('pointerdown', this._close, true); this._close = null; } },
   removeFromSource(src) {

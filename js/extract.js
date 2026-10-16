@@ -68,7 +68,7 @@ Object.assign(Run, {
   // ===== bosses =====
   bossMax() {
     if (this.restricted) return 2;
-    return this.d >= 30 ? 3 : this.d >= 18 ? 2 : 1;
+    return this.lv >= 60 ? 3 : this.lv >= 36 ? 2 : 1;   // more bosses at once only on high-level locations
   },
   dropKey(z) {
     const owned = id => (G.keys && G.keys[id]) || Inv.count(this.p.backpack, id);

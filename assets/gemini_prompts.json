@@ -305,7 +305,7 @@
  ],
  [
   "furn_bookshelf",
-  "A tall bookshelf with books, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A tall bookshelf with books, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text. The front face fills the whole silhouette: perfectly rectangular outline, vertical left and right edges exactly parallel, no visible side panel, no depth, no 3/4 angle."
  ],
  [
   "furn_fridge",
@@ -373,7 +373,11 @@
  ],
  [
   "furn_server",
-  "A server rack with blinking lights, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A server rack with blinking lights, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text. The front face fills the whole silhouette: perfectly rectangular outline, vertical left and right edges exactly parallel, no visible side panel, no depth, no 3/4 angle."
+ ],
+ [
+  "furn_wardrobe",
+  "A tall old wooden wardrobe with two doors and a drawer at the bottom, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text. The front face fills the whole silhouette: perfectly rectangular outline, vertical left and right edges exactly parallel, no visible side panel, no depth, no 3/4 angle."
  ],
  [
   "furn_stallcart",
@@ -673,7 +677,7 @@
  ],
  [
   "furn_toilet",
-  "A a dirty toilet, side view, front view, old and worn, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A dirty old porcelain toilet drawn as a pure flat side elevation, like a technical side-view drawing for a 2D side-scrolling game: camera exactly level and exactly 90 degrees to the side, the water tank is a flat upright rectangle on the left, the bowl sticks out to the right, the seat and lid are seen edge-on as thin lines, the inside of the bowl is NOT visible, no top surface visible, no 3/4 angle, no perspective, isolated, no floor, no shadow. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_sink",
@@ -693,7 +697,7 @@
  ],
  [
   "furn_vent",
-  "A a rooftop metal air vent box, front view, old and worn, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A wide low rooftop air-conditioning unit (HVAC box), wider than it is tall, with a big louvered metal grille and a round fan cover on its front face, drawn as a pure flat front elevation for a 2D side-scrolling game: camera exactly level, perfectly rectangular outline, vertical left and right edges exactly parallel, no top surface visible, no side panel visible, no depth, no 3/4 angle, no perspective, isolated, no floor line, no shadow, rusty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "bg_city_0",
@@ -2034,6 +2038,10 @@
   "A game item icon of a dented red metal toolbox with a wrench, screwdriver and roll of duct tape sticking out of it, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
+  "icon_sewkit",
+  "A game item icon of a small worn tin sewing kit, lid open, with a spool of thread, a needle, a few safety pins and a folded cloth patch, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
   "icon_pipebomb",
   "A game item icon of a homemade pipe bomb: short rusty metal pipe with end caps, wrapped in duct tape, with a fuse wire sticking out, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
@@ -2392,5 +2400,33 @@
   "char_ton_arm",
   "Using the attached character as the exact reference (identical outfit, colors, proportions and art style), draw ONLY ONE arm of this character as a separate sprite part for animation: the sleeve from the shoulder down to the hand, hanging straight down and relaxed, hand slightly open, side view, the same size as the character's arm, no body. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
   "char_ton"
+ ],
+ [
+  "icon_top_tee",
+  "A game item icon of a plain faded grey cotton t-shirt laid flat, front view, small chest pocket, slightly dirty and worn, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_top_hoodie",
+  "A game item icon of a dark navy hooded sweatshirt laid flat, front view, big front kangaroo pocket, drawstrings, worn and dusty, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_top_field",
+  "A game item icon of an olive-drab military field jacket laid flat, front view, four flap pockets on the chest and hips, buttons, dusty and battle-worn, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_top_tac",
+  "A game item icon of a black tactical combat shirt with a chest rig of many ammo pouches laid flat, front view, MOLLE straps, rugged and worn, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_pants_jeans",
+  "A game item icon of a pair of faded blue denim jeans laid flat, front view, front pockets, frayed and dirty, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_pants_cargo",
+  "A game item icon of a pair of khaki cargo trousers laid flat, front view, big flap pockets on the sides of the thighs, dusty and worn, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "icon_pants_tac",
+  "A game item icon of a pair of dark grey tactical combat trousers laid flat, front view, knee pads, many zip and flap pockets, rugged and worn, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ]
 ]

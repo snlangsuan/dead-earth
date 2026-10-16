@@ -4,10 +4,13 @@ const Input = {
   init(canvas) {
     window.addEventListener('keydown', e => {
       if (e.code === 'Tab') e.preventDefault();
-      if (!Input.keys[e.code]) Input.pressed[e.code] = true;
-      Input.keys[e.code] = true;
+      if (e.ctrlKey && Keys.ctrlBound && typeof Run !== 'undefined' && Run.active && /^(Key[A-Z]|Digit\d|Arrow|Space)/.test(e.code)) e.preventDefault();   // Ctrl bound to an action: keep Ctrl+D/A/S... from reaching the browser
+      if (Keys.capture) return;   // the settings screen is waiting for a key
+      const c = Keys.tr(e.code); if (c == null) return;   // player's key -> the game's own key
+      if (!Input.keys[c]) Input.pressed[c] = true;
+      Input.keys[c] = true;
     });
-    window.addEventListener('keyup', e => { Input.keys[e.code] = false; });
+    window.addEventListener('keyup', e => { const c = Keys.tr(e.code); if (c != null) Input.keys[c] = false; });
     window.addEventListener('blur', () => { Input.keys = {}; Input.mouse.down = false; });
     canvas.addEventListener('mousemove', e => { const b = canvas.getBoundingClientRect(); Input.mouse.x = e.clientX - b.left; Input.mouse.y = e.clientY - b.top; Input.mouse.moved = true; Input.mouse.t = performance.now(); });
     canvas.addEventListener('mousedown', e => { if (e.button === 0) Input.mouse.down = true; });
@@ -96,10 +99,12 @@ const Run = {
     const seed = G.layouts[this.layoutKey];
     this.restricted = rk || null;
     if (K) { farm = true; G.keys[rk]--; if (G.keys[rk] <= 0) delete G.keys[rk]; }
-    const map = generateLocation(seed, loc.theme, d);
+    const map = generateLocation(seed, loc.theme, d, K ? null : Levels.floors(stageId, locIdx));
     const ch = CHARACTERS[G.char];
     const cs = G.chars[G.char];
     this.stage = stage; this.locIdx = locIdx; this.loc = loc; this.d = d; this.farm = !!farm;
+    this.lv = Levels.loc(stageId, locIdx) + (K ? 6 : 0);
+    Object.assign(this, Levels.tune(this.lv));
     this.map = map;
     this.doorSet = new Set(map.doors.map(dr => dr.f + '|' + dr.x));
     this.p = {
@@ -112,10 +117,12 @@ const Run = {
     const firstW = this.p.weapons.findIndex(w => w);
     this.p.cur = firstW >= 0 ? firstW : 0;
     this.zombies = []; this.bullets = []; this.nades = []; this.acid = []; this.parts = []; this.texts = [];
-    this.cash = 0; this.kills = 0; this.dangerPts = Days.worldDanger(); this.level = 1 + Math.floor(this.dangerPts / 45); this.trickleT = 14;
-    this.waveT = Math.max(55, 80 - d); this.waveN = 0; this.waveQ = 0; this.waveSpawnT = 0; this.waveActive = 0; this.waveWarned = false; this.chasers = 0;
+    this.cash = 0; this.kills = 0; this.dangerPts = Days.worldDanger() * Math.min(1, this.lv / 8); this.level = Math.min(this.maxLevel, 1 + Math.floor(this.dangerPts / this.dangerStep)); this.trickleT = 14;
+    this.waveT = this.firstWave; this.waveN = 0; this.waveQ = 0; this.waveSpawnT = 0; this.waveActive = 0; this.waveWarned = false; this.chasers = 0;
     this.boss = null; this.bossSpawned = false; this.bossKilled = false;
-    this.bossLvl = 5 + Math.floor(d / 10); this.bossKills = 25 + Math.floor(d * 1.2);
+    // early locations have no boss; later the boss comes at a danger level this location can actually reach
+    if (this.lv < Levels.BOSS_FROM) { this.bossLvl = 99; this.bossKills = 1e9; }
+    else { this.bossLvl = Math.min(this.maxLevel, 5 + Math.floor(this.dc / 10)); this.bossKills = 25 + Math.floor(this.dc * 1.2); }
     this.retreatT = 0; this.time = 0; this.shake = 0; this.searchCount = 0;
     this.rescued = []; this.survivor = null; this.generator = null; this.powered = false;
     this.navT = 0; this.hop = []; this.alertT = 0; this.panel = null; this.paused = false; this.medJob = null;
@@ -158,7 +165,7 @@ const Run = {
     const farRooms = map.rooms.filter(rm => !rm.outdoor && map.dist[rm.id] >= Math.max(1, maxDist * 0.45));
     const anyRooms = map.rooms.filter(rm => !rm.outdoor);
     const pickRoom = () => U.pick(rr, farRooms.length ? farRooms : anyRooms);
-    const lootFurn = rm => rm.furn.filter(f => f.loot && !f.decor && f.kind !== 'supply');
+    const lootFurn = rm => rm.furn.filter(f => f.loot && !f.decor && f.kind !== 'supply' && !f.forced);
     const objs = [];
     for (const t of types) {
       if (t === 'kill') { const tg = 12 + Math.round(d * 1.2); objs.push({ type: t, cur: 0, target: tg, label: `กำจัดซอมบี้ ${tg} ตัว` }); }
@@ -168,14 +175,14 @@ const Run = {
         let fu = null;
         for (let k = 0; k < 20 && !fu; k++) { const c = lootFurn(pickRoom()); if (c.length) fu = U.pick(rr, c); }
         if (!fu) { const rm = pickRoom(); fu = rm.place('crate', 30); }
-        if (fu) { fu.forced = [{ id: qid, q: 1 }]; objs.push({ type: t, item: qid, cur: 0, target: 1, label: `หา${ITEMS[qid].n}แล้วนำกลับฐาน` }); }
+        if (fu) { fu.forced = (fu.forced || []).concat([{ id: qid, q: 1 }]); objs.push({ type: t, item: qid, cur: 0, target: 1, label: `หา${ITEMS[qid].n}แล้วนำกลับฐาน` }); }
       }
       if (t === 'generator') {
         let fu = null;
         for (let k = 0; k < 20 && !fu; k++) { const c = lootFurn(pickRoom()); if (c.length) fu = U.pick(rr, c); }
         let gen = null;
         for (let k = 0; k < 20 && !gen; k++) { const rm = U.pick(rr, anyRooms); gen = rm.place('generator', 30); }
-        if (fu && gen) { fu.forced = [{ id: 'fuse', q: 1 }]; this.generator = gen; objs.push({ type: t, cur: 0, target: 1, label: 'หาฟิวส์แล้วซ่อมเครื่องปั่นไฟ' }); }
+        if (fu && gen) { fu.forced = (fu.forced || []).concat([{ id: 'fuse', q: 1 }]); this.generator = gen; objs.push({ type: t, cur: 0, target: 1, label: 'หาฟิวส์แล้วซ่อมเครื่องปั่นไฟ' }); }
       }
       if (t === 'supply') {
         const tg = U.ri(rr, 2, 3); let placed = 0;
@@ -208,19 +215,20 @@ const Run = {
   survivorName(s) { return s.kind === 'char' ? CHARACTERS[s.id].n : s.kind === 'role' ? ROLES[s.id].who : s.id; },
 
   zType() {
-    const d = this.d, L = this.level;
-    const w = [['walker', 10], ['runner', 1.5 + d * 0.25 + L * 0.6]];
-    if (d >= 2 || L >= 4) w.push(['brute', 0.4 + d * 0.12 + L * 0.2]);
-    if (d >= 4 || L >= 6) w.push(['spitter', 0.5 + d * 0.1 + L * 0.15]);
+    // which types can appear depends on the location level; danger only makes the allowed ones more common
+    const d = this.dc, L = this.level, lv = this.lv;
+    const w = [['walker', 10], ['runner', (lv <= 1 ? 0.6 : 1.2) + d * 0.25 + L * 0.4]];
+    if (lv >= Levels.BRUTE_FROM) w.push(['brute', 0.3 + d * 0.12 + L * 0.15]);
+    if (lv >= Levels.SPITTER_FROM) w.push(['spitter', 0.5 + d * 0.1 + L * 0.15]);
     return U.wpick(Math.random, w);
   },
 
   spawnZombie(type, room, x, alerted) {
     const Z = ZOMBIES[type];
-    const hm = 1 + this.d * 0.07 + (this.level - 1) * 0.05;
+    const hm = 1 + this.dc * 0.07 + (this.level - 1) * 0.05;
     const z = {
       type, Z, x, f: room.f, room: room.id, rad: Z.r, climb: null,
-      hp: Z.hp * hm, maxHp: Z.hp * hm, spd: Z.spd * U.rf(Math.random, 0.85, 1.15), dmg: Z.dmg * (1 + this.d * 0.04),
+      hp: Z.hp * hm, maxHp: Z.hp * hm, spd: Z.spd * U.rf(Math.random, 0.85, 1.15), dmg: Z.dmg * (1 + this.dc * 0.04 + (this.level - 1) * 0.04), dmgK: 1 + this.dc * 0.04 + (this.level - 1) * 0.04,
       state: alerted ? 'chase' : 'idle', facing: Math.random() < 0.5 ? -1 : 1, atkCd: 0, wanderX: x, wanderT: 0,
       ph: Math.random() * 10, hitT: 0, look: Math.floor(Math.random() * 5), depth: U.rf(Math.random, -6, 6), spitCd: 2, chargeT: 0, chargeCd: 5,
       skin: U.pick(Math.random, ['#7a9a66', '#6f8f5c', '#8aa36f', '#6a8a6a', '#94a87a']),
@@ -230,14 +238,24 @@ const Run = {
     return z;
   },
 
+  // a spot inside a room that is not right behind a doorway or on a ladder hole, so nothing is waiting in your face
+  safeX(rm, r = Math.random) {
+    const L = rm.x0 + (this.door(rm.f, rm.x0) ? 110 : 40), Rr = rm.x1 - (this.door(rm.f, rm.x1) ? 110 : 40);
+    if (Rr - L < 30) return (rm.x0 + rm.x1) / 2;
+    for (let i = 0; i < 6; i++) {
+      const x = U.rf(r, L, Rr);
+      if (!this.map.ladders.some(l => Math.abs(l.x - x) < 55 && (l.a === rm.id || l.b === rm.id))) return x;
+    }
+    return U.rf(r, L, Rr);
+  },
   populate() {
-    const map = this.map, d = this.d;
-    const total = Math.min(this.zCap() - 5, Math.round(5 + d * 1.4 + map.rooms.length * 0.8));
+    const map = this.map, d = this.dc;
+    const total = Math.min(this.zCap() - 5, Math.round((this.lv <= 2 ? 3 : 5) + d * 1.4 + map.rooms.length * 0.8));
     const rooms = map.rooms.filter(rm => rm.id !== map.start);
     for (let i = 0; i < total; i++) {
       const rm = U.pick(Math.random, rooms);
       if (rm.id === map.streetL.id) continue;
-      this.spawnZombie(this.zType(), rm, U.rf(Math.random, rm.x0 + 40, rm.x1 - 40), false);
+      this.spawnZombie(this.zType(), rm, this.safeX(rm), false);
     }
   },
 
@@ -291,16 +309,16 @@ const Run = {
     }
   },
   // limits so the player is never swarmed beyond what is playable
-  zCap() { return Math.min(30, 12 + Math.floor(this.d * 0.4) + (this.level || 1) * 2); },
-  chaseCap() { return Math.min(18, 8 + this.level + Math.floor(this.d / 5)); },
-  waveSize() { return Math.min(10, 3 + Math.floor(this.level * 0.8) + Math.floor(this.d / 6)); },
+  zCap() { return Math.min(30, 10 + Math.floor(this.dc * 0.4) + (this.level || 1) * 2); },
+  chaseCap() { return Math.min(18, 6 + this.level + Math.floor(this.dc / 5)); },
+  waveSize() { return Math.min(10, 2 + Math.floor(this.level * 0.8) + Math.floor(this.dc / 6)); },
   alive() { let n = 0; for (const z of this.zombies) if (!z.dead) n++; return n; },
   updateWaves(dt) {
     this.waveT -= dt;
     if (this.waveT <= 15 && !this.waveWarned) { this.waveWarned = true; this.shake = Math.max(this.shake, 1.5); Snd.waveWarn(); }
     if (this.waveT <= 0) {
       this.waveN++; this.waveWarned = false;
-      this.waveT = Math.max(50, 95 - this.level * 4 - this.d * 0.6);
+      this.waveT = Math.max(50, 110 - this.level * 4 - this.dc * 0.6);
       const n = Math.max(0, Math.min(this.waveSize(), this.zCap() - this.alive()));
       this.waveQ += n; this.waveActive = 30;
       toast(this.p.hidden ? '🧟 ฝูงซอมบี้มาถึงแล้ว... อยู่เงียบๆ' : '🧟 ฝูงซอมบี้มาถึงแล้ว!', 'warn'); Snd.waveArrive();
@@ -372,11 +390,11 @@ const Run = {
     if (!pr.revealed) { pr.revealed = true; if (!pr.outdoor) this.popText(p.x, this.yOf(p) - 110, 'ห้องใหม่!', '#7fe3ff'); }
     // danger
     this.dangerPts += dt;
-    const nl = 1 + Math.floor(this.dangerPts / 45);
+    const nl = Math.min(this.maxLevel, 1 + Math.floor(this.dangerPts / this.dangerStep));
     if (nl > this.level) { this.level = nl; Snd.danger(); toast(`⚠ ระดับอันตราย ${nl} — ซอมบี้ดุขึ้นและฝูงจะใหญ่ขึ้น`, 'warn'); }
     this.updateWaves(dt);
     this.trickleT -= dt;
-    if (this.trickleT <= 0) { this.trickleT = Math.max(8, 20 - this.level * 1.0 - this.d * 0.1); this.trickle(); }
+    if (this.trickleT <= 0) { this.trickleT = Math.max(8, 24 - this.level * 1.0 - this.dc * 0.1); this.trickle(); }
     if (!this.bossSpawned && (this.level >= this.bossLvl || this.kills >= this.bossKills)) this.spawnBoss();
     // nav
     this.navT -= dt;
@@ -431,10 +449,10 @@ const Run = {
     if (building) mx = 0;
     const up = K['KeyW'] || K['ArrowUp'], down = K['KeyS'] || K['ArrowDown'];
     // movement modes: Z = sneak (silent, slow), normal walk, Shift = run (loud, uses stamina)
-    const sneak = (K['KeyZ']) && !p.climb;
-    const sprint = !sneak && (K['ShiftLeft'] || K['ShiftRight']) && (p.stam > 1 || p.adren > 0) && mx !== 0;
+    const sneak = K['KeyZ'] && !p.climb;
+    const sprint = !sneak && !p.aiming && !p.overKg && (K['ShiftLeft'] || K['ShiftRight']) && (p.stam > 1 || p.adren > 0) && mx !== 0;
     p.gait = sneak ? 'sneak' : sprint ? 'run' : 'walk'; p.sneak = sneak;
-    let spd = p.spd * (sneak ? 0.38 : sprint ? 1.45 : 0.7) * (p.adren > 0 ? 1.2 : 1) * (this.medJob ? 0.5 : 1);
+    let spd = p.spd * (sneak ? 0.38 : sprint ? 1.45 : 0.7) * (p.adren > 0 ? 1.2 : 1) * (this.medJob ? 0.5 : 1) * (p.aiming ? 0.5 : 1);
     if (p.dropH) { // landing after letting go of a ladder (or hopping out at the top)
       if (p.dropH > 0) { p.dropV = (p.dropV || 0) + 1800 * dt; p.dropH = Math.max(0, p.dropH - p.dropV * dt); if (!p.dropH) { p.dropV = 0; Snd.step && Snd.step(false); if (this.time - (p.lastDrop || -9) > 0.1) { this.noise(p.x, floorY(p.f), 180); p.lastDrop = this.time; } } }
       else p.dropH = Math.min(0, p.dropH + 400 * dt);
@@ -459,7 +477,7 @@ const Run = {
       else if (down) { const l = this.ladderNear(p, false); if (l) { p.x = l.x; p.vx = 0; p.climb = { lad: l, t: 0.98 }; } }
       // facing: mouse-held attack aims at the cursor; otherwise movement keys turn the character;
       // standing still, the cursor turns you only if it moved after your last step
-      const aimMouse = Input.mouse.down && R.cam;
+      const aimMouse = (Input.mouse.down || p.aiming) && R.cam;
       const cursorFace = () => { const mw = R.screenToWorld(Input.mouse.x, Input.mouse.y); if (Math.abs(mw.x - p.x) > 6) p.facing = mw.x < p.x ? -1 : 1; };
       if (aimMouse) cursorFace();
       else if (mx) { p.facing = mx; p.keyT = now; }
@@ -481,7 +499,7 @@ const Run = {
         }
       }
       p.moving = Math.abs(p.vx) > 25;
-      if (sprint && p.adren <= 0) p.stam = Math.max(0, p.stam - 24 * dt / (p.mods.stam || 1));
+      if (sprint && p.adren <= 0) p.stam = Math.max(0, p.stam - 24 * (p.kgStam || 1) * dt / (p.mods.stam || 1));
     }
     if (!sprint) p.stam = Math.min(100, p.stam + 16 * dt);
     if (p.noiseFx) { p.noiseFx.t -= dt; if (p.noiseFx.t <= 0) p.noiseFx = null; }
@@ -561,7 +579,7 @@ const Run = {
     for (let k = 0; k < 2; k++) this.parts.push({ x: x0 + p.facing * 14, y: y0, vx: p.facing * U.rf(Math.random, 20, 60), vy: U.rf(Math.random, -30, -10), t: 0.6, smoke: true, s: 5 + Math.random() * 4, g: 0 });
     this.shake = Math.max(this.shake, s.pellets ? 4 : 1.5);
     this.noise(p.x, y0, s.noise);
-    this.dangerPts += s.noise / 1100;
+    this.dangerPts += (s.noise / 1100) * (this.noiseK || 1);
     if (w.mag <= 0 && Inv.count(p.backpack, s.ammo) > 0) this.reload();
   },
 
@@ -644,6 +662,8 @@ const Run = {
       if (it.stam) p.stam = 100;
       if (it.heal) p.hp = Math.min(p.maxHp, p.hp + it.heal);
       Snd.eat(); this.popText(p.x, this.yOf(p) - 90, '+' + it.food + ' อิ่ม', '#ffd36f');
+    } else if (it.t === 'tool' && id === 'sewkit') {
+      this.startGearRepair(this.worstGear(), null, 'sewkit'); return false;
     } else if (it.t === 'tool' && id === 'repairkit') {
       this.startFieldRepair(); return false; // consumed (with parts) only when the repair finishes
     } else return false;
@@ -685,7 +705,7 @@ const Run = {
     for (let k = 0; k < 12; k++) this.parts.push({ x: n.x + U.rf(Math.random, -40, 40), y: n.y + U.rf(Math.random, -30, 10), vx: U.rf(Math.random, -40, 40), vy: U.rf(Math.random, -60, -10), t: 1.4, smoke: true, s: 14 + Math.random() * 14, g: 0 });
     this.shake = 10;
     this.noise(n.x, n.y, 1100);
-    this.dangerPts += 1.2;
+    this.dangerPts += (1.2) * (this.noiseK || 1);
   },
 
   damageZombie(z, dmg, kb, crit) {
@@ -790,7 +810,11 @@ const Run = {
     if (Math.random() < dt * (z.state === 'chase' ? 0.3 : 0.06)) Snd.groan(z.x, z.f, z.type);
     const zy = this.yOf(z), py = this.yOf(p);
     // just noticed the player: short reaction (turn + roar) before giving chase, then ramp up speed
-    if (z.prevState !== 'chase' && z.state === 'chase') { z.alertT = z.hitT > 0 ? 0.1 : U.rf(Math.random, 0.35, 0.7); z.run = 0.2; }
+    if (z.prevState !== 'chase' && z.state === 'chase') {
+      const first = !z.seenP; z.seenP = true;
+      z.alertT = z.hitT > 0 ? 0.1 : first ? U.rf(Math.random, 0.9, 1.3) : U.rf(Math.random, 0.35, 0.7); z.run = 0.2;
+      if (first && z.hitT <= 0) this.popText(z.x, zy - (z.Z.boss ? 175 : 100), '!', '#ffd24a');
+    }
     z.prevState = z.state;
     // detection
     if (p.hidden) {
@@ -823,7 +847,7 @@ const Run = {
       if (z.wave && z.idleT > 25 && Math.abs(z.x - p.x) + Math.abs(zy - py) > 900) { z.gone = true; return; }
       z.wanderT -= dt;
       const rm = map.rooms[z.room];
-      if (z.wanderT <= 0) { z.wanderT = U.rf(Math.random, 2, 5); z.wanderX = U.rf(Math.random, rm.x0 + 30, rm.x1 - 30); }
+      if (z.wanderT <= 0) { z.wanderT = U.rf(Math.random, 2, 5); z.wanderX = z.wave ? U.rf(Math.random, rm.x0 + 30, rm.x1 - 30) : this.safeX(rm); }
       const dx = z.wanderX - z.x;
       if (Math.abs(dx) > 4) { z.facing = Math.sign(dx); this.moveH(z, Math.sign(dx) * spd * 0.35 * dt); }
       return;
@@ -843,15 +867,19 @@ const Run = {
       if (z.atkCd <= 0) { z.atkCd = 1.1; this.hitBarricade(bb, z); }
       return;
     }
-    if (Math.abs(dxp) < z.rad + 18 && Math.abs(dyp) < (p.climb && !z.climb ? 24 : 48) && !p.hidden && !this.barrBetween(z.f, z.x, p.x)) {
+    const reach = Math.abs(dxp) < z.rad + 18 && Math.abs(dyp) < (p.climb && !z.climb ? 24 : 48) && !p.hidden && !this.barrBetween(z.f, z.x, p.x);
+    if (reach && !z.inReach) z.atkCd = Math.max(z.atkCd, z.type === 'runner' ? 0.35 : 0.55);   // wind-up before the first swing
+    z.inReach = reach;
+    if (reach) {
       z.run = 0.35;
       z.facing = Math.sign(dxp) || z.facing;
       if (z.atkCd <= 0) {
-        z.atkCd = z.Z.boss ? 1.3 : 1.0; Snd.zombieAttack(z.x, z.f);
-        this.hurt(z.dmg);
+        // each type hits differently: runners scratch fast and light, brutes slam slow and hard (±15% per hit)
+        z.atkCd = z.Z.atk || 1.0; Snd.zombieAttack(z.x, z.f);
+        this.hurt(z.dmg * U.rf(Math.random, 0.85, 1.15));
         const kbr = p.mods.kbRes || 1;
         if (!p.climb) this.moveH(p, Math.sign(dxp) * (z.Z.boss ? 60 : z.type === 'brute' ? 40 : 10) * kbr);
-        if (!this.armorBlocked && Math.random() < 0.18 * (p.mods.infRes ?? 1)) { p.inf = Math.min(100, p.inf + U.ri(Math.random, 6, 14)); this.popText(p.x, py - 110, 'ติดเชื้อ!', '#9dff5c'); }
+        if (!this.armorBlocked && Math.random() < (z.Z.inf ?? 0.18) * (p.mods.infRes ?? 1)) { p.inf = Math.min(100, p.inf + U.ri(Math.random, 6, 14)); this.popText(p.x, py - 110, 'ติดเชื้อ!', '#9dff5c'); }
         z.chargeT = 0;
       }
       return;
@@ -859,7 +887,7 @@ const Run = {
     // spitter
     if (z.Z.ranged && z.f === p.f && !p.climb && Math.abs(dxp) < 420 && Math.abs(dxp) > 80 && this.clearLine(z.f, z.x, p.x)) {
       z.spitCd -= dt; z.facing = Math.sign(dxp);
-      if (z.spitCd <= 0) { z.spitCd = 2.6; Snd.spit(z.x, z.f); this.acid.push({ x: z.x + z.facing * 20, y: zy - 55, vx: z.facing * 360, vy: -60, f: z.f, room: z.room, dmg: z.dmg, t: 2 }); }
+      if (z.spitCd <= 0) { z.spitCd = 2.6; Snd.spit(z.x, z.f); this.acid.push({ x: z.x + z.facing * 20, y: zy - 55, vx: z.facing * 360, vy: -60, f: z.f, room: z.room, dmg: (z.Z.acid || z.Z.dmg) * (z.dmgK || 1), t: 2 }); }
       if (Math.abs(dxp) < 260) return;
     }
     if (z.room === pnav && !p.climb) {
@@ -905,7 +933,7 @@ const Run = {
   },
 
   wave() {
-    const n = 2 + this.level + Math.floor(this.d * 0.3);
+    const n = Math.min(12, 1 + this.level + Math.floor(this.dc * 0.3));
     toast(`⚠ ระดับอันตราย ${this.level} — ซอมบี้ฝูงใหม่กำลังมา!`, 'warn');
     for (let i = 0; i < n; i++) this.spawnAtEntry(true);
   },
@@ -936,10 +964,12 @@ const Run = {
     for (let i = 0; i < n; i++) {
       const rm = i === 0 ? best : U.pick(Math.random, rooms.length ? rooms : [best]);
       const b = this.spawnZombie('boss', rm, (rm.x0 + rm.x1) / 2 + (i ? U.rf(Math.random, -40, 40) : 0), true);
-      b.hp *= 1 + this.d * 0.05; b.maxHp = b.hp; this.bosses.push(b);
+      // boss strength follows the location level: a first boss (Lv 6) is much softer than a late one
+      b.hp *= Levels.bossHp(this.lv); b.maxHp = b.hp; b.dmg *= Levels.bossDmg(this.lv); b.dmgK = (b.dmgK || 1) * Levels.bossDmg(this.lv);
+      this.bosses.push(b);
     }
     this.boss = this.bosses[0];
-    toast(n > 1 ? `☠ ${ZOMBIES.boss.n} ปรากฏตัว ${n} ตัวพร้อมกัน!` : `☠ ${ZOMBIES.boss.n} ปรากฏตัวแล้ว!`, 'boss'); Snd.bossRoar();
+    toast(n > 1 ? `☠ ${ZOMBIES.boss.n} Lv ${this.lv} ปรากฏตัว ${n} ตัวพร้อมกัน!` : `☠ ${ZOMBIES.boss.n} Lv ${this.lv} ปรากฏตัวแล้ว!`, 'boss'); Snd.bossRoar();
     this.shake = 8;
   },
 
@@ -1113,12 +1143,12 @@ const Run = {
       } else toast('ต้องใช้ฟิวส์เครื่องปั่นไฟ — ลองค้นตามเฟอร์นิเจอร์');
       return;
     }
-    if (fu && fu.items && fu.items.length) { UIRun.openLoot(fu); return; }
-    // a door right here wins over searching (searching also has its own key, Q)
+    // a door wins over a box/pile that is farther away, and over searching (searching also has its own key, Q)
     const dr = this.doorNear();
+    if (fu && fu.items && fu.items.length && !(dr && Math.abs(dr.x - p.x) < Math.abs(fu.x - p.x))) { UIRun.openLoot(fu); return; }
     if (dr) { this.toggleDoor(dr); return; }
     if (fu && this.canSearch(fu) && this.nearFurn(22) === fu) { p.searchOn = fu; return; }
-    UIRun.openInventory();
+    // nothing to use here: E does nothing (the backpack has its own key, Tab)
   },
   takeAllNearby() {
     const lt = this.lockTarget();
@@ -1195,7 +1225,7 @@ const Run = {
     p.build.t += dt;
     this.buildNoiseT -= dt;
     if (this.buildNoiseT <= 0) { // hammering is loud
-      this.buildNoiseT = 0.55; this.noise(site.x, this.yOf(p), 380); this.dangerPts += 0.15; Snd.hammer();
+      this.buildNoiseT = 0.55; this.noise(site.x, this.yOf(p), 380); this.dangerPts += (0.15) * (this.noiseK || 1); Snd.hammer();
       for (let i = 0; i < 4; i++) this.parts.push({ x: site.x + U.rf(Math.random, -14, 14), y: this.yOf(p) - U.rf(Math.random, 30, 90), vx: U.rf(Math.random, -90, 90), vy: U.rf(Math.random, -160, -40), t: 0.4, c: '#c9a46a', s: 2.5, g: 600 });
     }
     if (p.build.t >= p.build.max) {
@@ -1214,7 +1244,7 @@ const Run = {
   },
   hitBarricade(bb, z) {
     const mult = { walker: 1, runner: 0.7, brute: 3.2, spitter: 0.8, boss: 9 }[z.type] || 1;
-    bb.hp -= 7 * mult * (1 + this.d * 0.03); bb.hitT = 0.18; Snd.woodHit(bb.x, bb.kind === 'door' ? bb.f : bb.f + 1, bb.lvl > 1);
+    bb.hp -= 7 * mult * (1 + this.dc * 0.03); bb.hitT = 0.18; Snd.woodHit(bb.x, bb.kind === 'door' ? bb.f : bb.f + 1, bb.lvl > 1);
     const y = floorY(bb.kind === 'door' ? bb.f : bb.f + 1) - (bb.kind === 'door' ? 60 : 4);
     for (let i = 0; i < 3; i++) this.parts.push({ x: bb.x + U.rf(Math.random, -10, 10), y: y + U.rf(Math.random, -30, 30), vx: U.rf(Math.random, -120, 120), vy: U.rf(Math.random, -180, -40), t: 0.5, c: bb.lvl > 1 && Math.random() < 0.5 ? '#9aa2aa' : '#a07a48', s: 3, g: 700 });
     if (bb.hp <= 0 && bb.lock) { this.openLockDoor(bb, true); return; }
@@ -1324,7 +1354,7 @@ const Run = {
         if (!Input.hit(code)) continue;
         if (pk.next && side !== pk.next) { pk.shake = 0.12; continue; } // same key twice does nothing
         pk.next = side === 'L' ? 'R' : 'L'; pk.prog += pk.gain; pk.flash = 0.12; pk.shake = 0.1;
-        this.noise(pk.door ? pk.door.x : pk.fu.x, this.yOf(p), 330); this.dangerPts += 0.04;
+        this.noise(pk.door ? pk.door.x : pk.fu.x, this.yOf(p), 330); this.dangerPts += (0.04) * (this.noiseK || 1);
         Snd.woodHit(pk.door ? pk.door.x : pk.fu.x, p.f, !pk.door && pk.fu.kind !== 'crate');
       }
       pk.prog = Math.max(0, pk.prog - dt * 9);
@@ -1383,7 +1413,7 @@ const Run = {
     for (const lk of this.locks) {
       if (lk.f !== p.f || (lk.x - p.x) * p.facing < -6 || Math.abs(lk.x - p.x) > reach) continue;
       lk.hitT = 0.18; this.popText(lk.x, py - 120, 'กด F เพื่องัดประตู', '#ffb36a'); return;
-      lk.hp -= dmg * 0.8; this.noise(lk.x, py, 420); this.dangerPts += 0.2;
+      lk.hp -= dmg * 0.8; this.noise(lk.x, py, 420); this.dangerPts += (0.2) * (this.noiseK || 1);
       for (let i = 0; i < 3; i++) this.parts.push({ x: lk.x, y: py - U.rf(Math.random, 30, 100), vx: -p.facing * U.rf(Math.random, 40, 160), vy: U.rf(Math.random, -160, -40), t: 0.45, c: '#8a6238', s: 3, g: 700 });
       if (lk.hp <= 0) this.openLockDoor(lk, true);
       return;
@@ -1402,7 +1432,7 @@ const Run = {
     const S = smashInfo(best);
     if (best.lock && !S) {
       this.popText(best.x, fy - 40, best.lock.pickOnly ? 'ล็อกนิรภัย — สะเดาะ (E) เท่านั้น' : 'แข็งเกินจะทุบ · F งัด · E สะเดาะ', best.lock.pickOnly ? '#7fd0ff' : '#ffb36a'); return;
-      best.lock.hp -= dmg * (best.kind === 'safe' ? 0.35 : 1); this.noise(best.x, py, 450); this.dangerPts += 0.2;
+      best.lock.hp -= dmg * (best.kind === 'safe' ? 0.35 : 1); this.noise(best.x, py, 450); this.dangerPts += (0.2) * (this.noiseK || 1);
       for (let i = 0; i < 4; i++) this.parts.push({ x: best.x - p.facing * best.w * 0.3, y: fy, vx: U.rf(Math.random, -150, 150), vy: U.rf(Math.random, -160, -20), t: 0.25, c: '#ffd76a', s: 2, g: 300 });
       if (best.lock.hp <= 0) { best.wasLocked = Math.max(0, best.lock.tier - 1); best.lock = null; this.popText(best.x, fy - 40, 'งัดสำเร็จ!', '#9dffb0'); }
       return;
@@ -1428,7 +1458,9 @@ const Run = {
     if (S.mat === 'wood') { items.push({ id: 'plank', q: W ? U.ri(r, W[0], W[1]) : U.ri(r, 1, 2) }); if (r() < 0.45) items.push({ id: 'nails', q: U.ri(r, 2, 5) }); }
     else if (S.mat === 'metal') items.push({ id: 'scrap', q: U.ri(r, 1, fu.kind === 'car' ? 5 : 3) });
     else items.push({ id: 'cloth', q: U.ri(r, 1, 2) });
-    const lost = (fu.loot && !fu.searched && (!fu.smax || (fu.sdone || 0) < fu.smax)) || (fu.items && fu.items.length) || (fu.forced && fu.forced.length && !fu.sdone);
+    // a mission item (virus sample, fuse...) is never destroyed: it falls out with the debris
+    if (fu.forced && fu.forced.length && !fu.sdone) { items.push(...fu.forced); fu.forced = null; }
+    const lost = (fu.loot && !fu.searched && (!fu.smax || (fu.sdone || 0) < fu.smax)) || (fu.items && fu.items.length);
     if (this.searching === fu) this.searching = null;
     if (this.locks) this.locks = this.locks.filter(l => l.fu !== fu);
     rm.furn.splice(rm.furn.indexOf(fu), 1); Snd.woodBreak(fu.x, f);

@@ -22,7 +22,7 @@ const armorAP = e => e ? Math.max(0, e.ap ?? armorMax(e.id)) : 0;
 const armorPct = e => { const mx = e ? armorMax(e.id) : 0; return mx ? Math.ceil(armorAP(e) / mx * 100) : 0; };
 // base repair price: cloth + scrap + money for the missing points
 function armorRepairCost(e) {
-  const miss = armorMax(e.id) - armorAP(e); if (miss <= 0) return null;
+  const miss = Math.round(armorMax(e.id) * Wear.capOf(e) / 100) - armorAP(e); if (miss <= 0) return null;
   const f = G.roles && G.roles.tailor ? 0.6 : 1;   // the tailor patches armor cheaper
   return { cloth: Math.max(1, Math.ceil(miss / 30 * f)), scrap: Math.max(1, Math.ceil(miss / 45 * f)), money: Math.ceil(miss * ITEMS[e.id].v * 0.003 * f) };
 }

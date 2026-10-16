@@ -98,7 +98,7 @@ const State = {
   hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } },
   save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { } },
   load() {
-    try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); if (!G.blueprints) G.blueprints = ['knife', 'bat']; if (!G.keys) G.keys = {}; if (!G.bag) G.bag = 'pack_day'; if (!G.opened) G.opened = {}; if (!G.gotLock) { G.gotLock = true; Inv.addFree(G.stash, { id: 'lockpick', q: 3 }); } if (!G.shopV2) { G.shopV2 = true; State.restock(); } if (!G.market) G.market = { bought: {}, sold: {} }; if (!G.locOrderV2) { G.locOrderV2 = true; for (const k in G.progress || {}) G.progress[k].order = [...G.progress[k].order].sort((a, b) => a - b); } if (!G.gotBarr) { G.gotBarr = true; Inv.addFree(G.stash, { id: 'plank', q: 4 }); Inv.addFree(G.stash, { id: 'nails', q: 8 }); } return true; } } catch (e) { }
+    try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); if (!G.blueprints) G.blueprints = ['knife', 'bat']; if (!G.keys) G.keys = {}; if (!G.bag) G.bag = 'pack_day'; if (!G.opened) G.opened = {}; if (!G.gotLock) { G.gotLock = true; Inv.addFree(G.stash, { id: 'lockpick', q: 3 }); } if (!G.shopV2) { G.shopV2 = true; State.restock(); } if (!G.market) G.market = { bought: {}, sold: {} }; if (!G.locOrderV2) { G.locOrderV2 = true; for (const k in G.progress || {}) G.progress[k].order = [...G.progress[k].order].sort((a, b) => a - b); } if (G.shop && G.shop.stock && !G.shop.stock.some(x => x.id === 'lockpick')) { G.shop.stock.push({ id: 'lockpick', q: 6 }); Inv.sortList(G.shop.stock); } if (!G.gotBarr) { G.gotBarr = true; Inv.addFree(G.stash, { id: 'plank', q: 4 }); Inv.addFree(G.stash, { id: 'nails', q: 8 }); } return true; } } catch (e) { }
     return false;
   },
   wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } },
@@ -175,7 +175,7 @@ const State = {
     for (const k of ['bought', 'sold']) { const m = State.mkt()[k]; for (const id in m) { m[id] = Math.floor(m[id] / 2); if (!m[id]) delete m[id]; } }
     const r = U.rng(Date.now() & 0xffffffff);
     const pool = Object.keys(ITEMS).filter(id => ITEMS[id].tier != null && ITEMS[id].tier <= tier);
-    const always = ['a9', 'bandage', 'canned', 'water'];
+    const always = ['a9', 'bandage', 'canned', 'water', 'lockpick'];   // lockpicks open locked cabinets / key containers
     const n = Math.min(pool.length, 13 + tier * 3 + (G.roles.merchant ? 4 : 0));
     const chosen = new Set(always.filter(a => pool.includes(a)));
     // weapons wear out now, so the shop always carries some: 2 melee + 2 guns (when the tier has them) and a repair kit
