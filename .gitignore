@@ -5,3 +5,6 @@ assets/gemini/
 __pycache__/
 *.pyc
 .env
+
+# personal notes
+สิ่งที่ต้องทำ.md
