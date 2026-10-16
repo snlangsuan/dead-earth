@@ -8,6 +8,8 @@ Usage (in Terminal):
     python3 assets/gen_gemini.py --only char_jake,zombie_walker0   (also makes their pose sprites: walk, gun, pistol, melee, climb, dead / attack)
     python3 assets/gen_gemini.py --only walkframes  # pose-guided 6-frame walk cycles (assets/poses)
     python3 assets/gen_gemini.py --only walkarms    # fix arm swing on those frames (edits each _wf frame)
+    python3 assets/gen_gemini.py --only wear        # clothing icons (shirts / trousers with pockets)
+    python3 assets/gen_gemini.py --only pistolbare  # pistol pose with empty hands (any handgun is drawn in-game)
     python3 assets/gen_gemini.py --redo furn_bed  # regenerate specific files
     python3 assets/gen_gemini.py --list           # show all names
 
@@ -24,6 +26,23 @@ STYLE_REF = "char_jake"   # first image; attached to every later request to keep
 PREFIX = "Same art style as the attached reference image (match its outline thickness, shading and color palette), but draw a different subject: "
 API = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 DEFAULT_MODELS = ["gemini-2.5-flash-image", "gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"]
+
+
+def env_key():
+    """GEMINI_API_KEY from the environment, or from a .env file you create yourself (assets/.env or the repo root .env).
+    .env is git-ignored; the script only reads it, never writes or prints it."""
+    if os.environ.get("GEMINI_API_KEY"): return os.environ["GEMINI_API_KEY"]
+    for path in (os.path.join(HERE, ".env"), os.path.join(HERE, "..", ".env")):
+        try:
+            for line in open(path, encoding="utf-8"):
+                line = line.strip()
+                if line.startswith("export "): line = line[7:].strip()
+                if line.startswith("GEMINI_API_KEY="):
+                    v = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    if v: return v
+        except OSError:
+            pass
+    return ""
 
 
 def call(model, key, parts):
@@ -85,7 +104,7 @@ def main():
     if a.list:
         for it in items: print(it[0])
         return
-    key = os.environ.get("GEMINI_API_KEY") or getpass.getpass("Gemini API key (hidden): ").strip()
+    key = env_key() or getpass.getpass("Gemini API key (hidden): ").strip()
     if not key: sys.exit("No API key.")
     models = [a.model] if a.model else DEFAULT_MODELS
     os.makedirs(OUT, exist_ok=True)
@@ -98,6 +117,11 @@ def main():
         if "_wa" in n: base = n.split("_wa")[0]
         if "walkframes" in only and "_wf" in n: base = "walkframes"
         if "walkarms" in only and "_wa" in n: base = "walkarms"
+        if "pistolbare" in only and n.endswith("_pistol_bare"): base = "pistolbare"
+        if "crouch" in only and "_crouch" in n: base = "crouch"
+        if "walksheet" in only and n.endswith("_walksheet"): base = "walksheet"
+        if "wear" in only and (n.startswith("icon_top_") or n.startswith("icon_pants_")): base = "wear"
+        if "rig" in only and (n.endswith("_body") or n.endswith("_leg") or n.endswith("_arm")) and n.startswith("char_"): base = "rig"
         sel = not only or n in only or base in only or n in redo
         return sel and (n in redo or base in redo or not os.path.exists(os.path.join(OUT, n + ".png")))
     todo = [(it[0], it[1], it[2] if len(it) > 2 else None, it[3] if len(it) > 3 else None) for it in items if want(it[0])]

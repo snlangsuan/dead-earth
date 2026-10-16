@@ -37,9 +37,11 @@ const KeyGraph = {
   locLocked(stageId, li) { const t = this.locTarget(stageId, li); return !!t && !this.opened(t); },
   stageLocked(stageId) { const t = this.stageTarget(stageId); return !!t && !this.opened(t); },
   sourcesAt(stageId, li) { return this.targets.filter(t => t.src.stage === stageId && t.src.li === li && !this.opened(t)); },
+  // a "beat the boss" source at a location too low for bosses becomes a mission (find the key in a container)
+  method(t) { return t.src.method === 'boss' && Levels.loc(t.src.stage, t.src.li) < Levels.BOSS_FROM ? 'mission' : t.src.method; },
   where(t) {
     const st = STAGE_BY_ID[t.src.stage];
-    return `${t.src.method === 'boss' ? 'ฆ่าบอสที่' : 'ทำภารกิจที่'} ${st.locs[t.src.li].n} (${st.n})`;
+    return `${this.method(t) === 'boss' ? 'ฆ่าบอสที่' : 'ทำภารกิจที่'} ${st.locs[t.src.li].n} (${st.n})`;
   },
   // call after a key is brought home
   open(id) {
@@ -59,7 +61,7 @@ Object.assign(Run, {
     for (const t of KeyGraph.sourcesAt(this.stage.id, this.locIdx)) {
       if (Inv.count(this.p.backpack, t.id)) continue;
       const tn = ITEMS[t.id].n;
-      if (t.src.method === 'boss') { this.objectives.push({ type: 'keyboss', key: t.id, optional: true, cur: 0, target: 1, label: `(ไม่บังคับ) ฆ่าบอส → ได้ ${tn}` }); continue; }
+      if (KeyGraph.method(t) === 'boss' && this.bossLvl < 99) { this.objectives.push({ type: 'keyboss', key: t.id, optional: true, cur: 0, target: 1, label: `(ไม่บังคับ) ฆ่าบอส → ได้ ${tn}` }); continue; }
       // mission: the key sits in a far, preferably locked container
       const far = map.rooms.filter(rm => !rm.outdoor && map.dist[rm.id] >= 2);
       const pool = (far.length ? far : map.rooms.filter(rm => !rm.outdoor)).flatMap(rm => rm.furn.filter(f => f.loot && !f.decor && f.kind !== 'supply'));

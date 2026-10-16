@@ -488,7 +488,7 @@ const Override = {
       const img = new Image();
       img.onload = () => { this.loaded++; };
       img.onerror = () => { delete this.imgs[key]; };
-      img.src = 'assets/sprites/' + key + '.png';
+      img.src = 'assets/sprites/' + key + '.png' + (window.ASSET_VER ? '?v=' + window.ASSET_VER : '');
       this.imgs[key] = img;
     }
   },
@@ -504,7 +504,15 @@ const Override = {
   const _furn = Art.furn;
   Art.furn = function (kind, v) { const def = FURN[kind]; if (def && Override.has('furn_' + kind)) { const o = Override.obj('furn_' + kind, def.w, def.h); o.byHeight = true; return o; } return _furn(kind, v); };
   const _icon = Art.iconArt;
-  Art.iconArt = function (id) { return Override.has('icon_' + id) ? Override.obj('icon_' + id, 40, 40) : _icon(id); };
+  // key items are generated at runtime (k_N) and share two pictures: location keycard / stage pass
+  // ranked attachments share their family's picture (art); a new family borrows a similar one (artAlt) until its own exists
+  const iconName = id => {
+    if (ITEMS[id] && ITEMS[id].t === 'key') return ITEMS[id].icon === '🎫' ? 'icon_pass' : 'icon_key';
+    let k = id;
+    for (let i = 0; i < 3 && ITEMS[k]; i++) { if (Override.has('icon_' + k)) return 'icon_' + k; k = ITEMS[k].art || ITEMS[k].artAlt || k; }
+    return 'icon_' + k;
+  };
+  Art.iconArt = function (id) { const n = iconName(id); return Override.has(n) ? Override.obj(n, 40, 40) : _icon(id); };
   const _wpn = Parts.weapon;
   Parts.weapon = function (id) { const b = _wpn.call(Parts, id); if (b && Override.has('wpn_' + id)) return Override.obj('wpn_' + id, b.w, b.h, b); return b; };
   const _deco = Art.deco;

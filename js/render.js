@@ -66,6 +66,10 @@ const Sprites = {
   },
 };
 const FURN_TOPS = { desk: [4, '#8a6440'], counter: [2, '#b0aaa0'], labtable: [4, '#d8dde0'], toolbench: [0, '#8a6440'], register: [10, '#6a7078'], crate: [1, '#a88050'], dumpster: [6, '#2e6a40'], safe: [1, '#7a7e82'], filecab: [1, '#9aa2aa'], fridge: [1, '#d0d8dc'], stove: [1, '#5a6066'], medcab: [1, '#d8dde0'], wardrobe: [0, '#6a4a2a'], locker: [1, '#5f7186'], bookshelf: [1, '#5a3e26'], shelfunit: [1, '#6a7078'], server: [1, '#2a2f35'], tvstand: [38, '#5a4030'], weaponrack: [1, '#3a3326'], generator: [14, '#9a7a20'], supply: [6, '#2a70a0'] };
+// body-size correction for the upright roar frame (Gemini drew it larger than the hunched idle)
+// where the rear hand holds each painted gun (pixels in assets/sprites/wpn_<id>.png): pistol grip / stock wrist
+const WPN_GRIP = { smg: [52, 17], shotgun: [55, 13], rifle: [47, 16], sniper: [48, 15], crossbow: [33, 46], pistol: [20, 32], revolver: [22, 38] };
+const ROAR_FIX = { walker: 0.97, runner: 0.92, spitter: 0.97, brute: 0.84, boss: 0.88 };
 const R = {
   cv: null, ctx: null, W: 0, H: 0, cam: null, dpr: 1, stars: null,
   init(cv) {
@@ -99,8 +103,12 @@ const R = {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     if (!run || !run.map) { MenuFX.draw(this, dt); return; }
     const p = run.p, map = run.map;
-    const z = U.clamp(this.H / (FH * 2.55), 0.5, 1.5);
-    this.look = (this.look || 0) + ((p.hidden ? 0 : p.facing * 90) - (this.look || 0)) * Math.min(1, dt * 2.5);
+    const z0 = U.clamp(this.H / (FH * 2.55), 0.5, 1.5);
+    // aiming pushes the camera ahead (and long guns zoom out) so you can see what you're aiming at
+    const av = p.aiming && typeof Aim !== 'undefined' ? Aim.view(run, z0) : null;
+    this.aimZ = (this.aimZ || 1) + ((av ? av.zoom : 1) - (this.aimZ || 1)) * Math.min(1, dt * 4);
+    const z = z0 * this.aimZ;
+    this.look = (this.look || 0) + ((p.hidden ? 0 : p.facing * (90 + (av ? av.look : 0))) - (this.look || 0)) * Math.min(1, dt * (av ? 4 : 2.5));
     const tx = p.x + this.look, ty = run.yOf(p) - FH * 0.42;
     if (!this.cam) this.cam = { x: tx, y: ty, z };
     this.cam.z = z;
@@ -406,7 +414,14 @@ const R = {
     } else if (fu.searched && fu.kind !== 'bag' && fu.loot) ctx.globalAlpha = 0.72;
     const drawn = art2 && Art.draw(ctx, art2, L, T, w, h);
     ctx.globalAlpha = 1;
-    if (drawn && fu.kind === 'streetlamp') { const g = ctx.createRadialGradient(x + 30, T + 10, 2, x + 30, y, 220); g.addColorStop(0, 'rgba(255,220,150,0.32)'); g.addColorStop(1, 'rgba(255,220,150,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x + 22, T + 12); ctx.lineTo(x + 40, T + 12); ctx.lineTo(x + 130, y); ctx.lineTo(x - 70, y); ctx.fill(); ctx.fillStyle = 'rgba(255,230,160,0.16)'; ctx.beginPath(); ctx.ellipse(x + 30, y - 2, 100, 10, 0, 0, 7); ctx.fill(); }
+    if (drawn && fu.kind === 'streetlamp') {
+      // the cone starts at the painted bulb (≈ x+22, T+16 for the Gemini lamp drawn 200px tall)
+      const bx = x + 22, by = T + 17;
+      const g = ctx.createRadialGradient(bx, by, 2, bx, y, 220); g.addColorStop(0, 'rgba(255,220,150,0.32)'); g.addColorStop(1, 'rgba(255,220,150,0)'); ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(bx - 9, by); ctx.lineTo(bx + 9, by); ctx.lineTo(bx + 100, y); ctx.lineTo(bx - 100, y); ctx.fill();
+      ctx.fillStyle = 'rgba(255,240,190,0.55)'; ctx.beginPath(); ctx.ellipse(bx, by - 1, 9, 3, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,230,160,0.16)'; ctx.beginPath(); ctx.ellipse(bx, y - 2, 100, 10, 0, 0, 7); ctx.fill();
+    }
     if (!drawn) switch (fu.kind) {
       case 'bed': box(L, y - 30, w, 22, '#5a3e2a'); box(L + 4, y - 40, w - 8, 14, '#d8d4c8'); box(L + 6, y - 46, 30, 10, '#f0ece2'); box(L, y - 56, 8, 56, '#4a3220'); box(L + w - 8, y - 44, 8, 44, '#4a3220'); box(L + 40, y - 42, w - 50, 10, U.pick(rr, ['#6a4a7a', '#3a5a7a', '#7a4a4a'])); break;
       case 'bunk': ctx.strokeStyle = '#666c74'; ctx.lineWidth = 5; ctx.strokeRect(L + 3, T + 3, w - 6, h - 3); box(L + 6, y - 34, w - 12, 12, '#cfcabd'); box(L + 6, T + 34, w - 12, 12, '#cfcabd'); box(L + 8, T + 26, 26, 9, '#eee'); box(L + 8, y - 42, 26, 9, '#eee'); box(L + 40, T + 28, w - 50, 8, '#5a6a4a'); break;
@@ -463,7 +478,8 @@ const R = {
         show.forEach((it, i) => { const bx = x + (i - (show.length - 1) / 2) * 28, by = T - 20 + bob; ctx.fillStyle = 'rgba(15,24,34,0.85)'; ctx.strokeStyle = 'rgba(127,227,255,0.5)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(bx - 13, by - 13, 26, 26, 7); ctx.fill(); ctx.stroke();
           const ia = WEAPON_ART[it.id] ? Parts.weapon(it.id) : Art.iconArt(it.id); if (ia) { const k = Math.min(22 / ia.w, 22 / ia.h); Art.draw(ctx, ia, bx - ia.w * k / 2, by - ia.h * k / 2, ia.w * k, ia.h * k); } else { ctx.fillStyle = '#fff'; ctx.fillText(ITEMS[it.id].icon, bx, by + 6); } });
       }
-      if (!fu.searched && fu.prog > 0) { const py = fu.items && fu.items.length ? T - 46 : T - 16; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x - 30, py, 60, 8); ctx.fillStyle = '#7fe3ff'; ctx.fillRect(x - 29, py + 1, 58 * fu.prog, 6); }
+      fu._barY = null;
+      if (!fu.searched && fu.prog > 0) { const py = fu.items && fu.items.length ? T - 46 : T - 16; fu._barY = py; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x - 30, py, 60, 8); ctx.fillStyle = '#7fe3ff'; ctx.fillRect(x - 29, py + 1, 58 * fu.prog, 6); }
       if (fu.loot && !fu.searched && !fu.decor) this.searchBadge(run, fu, L + w - 6, Math.max(T + 8, y - 120));
       if (fu.whp != null && fu.whpMax && fu.whp < fu.whpMax) { // smash damage bar
         const bw = Math.min(70, w - 10), bx = fu.x - bw / 2, by = T - 12, k = Math.max(0, fu.whp / fu.whpMax);
@@ -601,6 +617,10 @@ const R = {
     const flick = p.hurtT > 0 && Math.floor(p.hurtT * 30) % 2;
     if (flick) this.ctx.globalAlpha = 0.5;
     const base = 'char_' + G.char;
+    const crouch = (p.aimDownT > 0 || ((!p.moving || p.aiming) && run.wantDown && run.wantDown(true))) && w && ITEMS[w.id].cls !== 'melee';
+    p._crouch = crouch;
+    const realCrouch = crouch && !p.climb && Sprites.meta(base + '_crouch_bare') && Override.get(base + '_crouch_bare');   // kneeling pose (Gemini) when this character has one
+    if (crouch && !realCrouch) { this.ctx.save(); this.ctx.translate(p.x, y); this.ctx.scale(1, 0.86); this.ctx.translate(-p.x, -y); }
     if (Sprites.has(base)) {
       const it = w && ITEMS[w.id], sc = (G.char === 'joe' ? 1.1 : 1) * CHAR_SCALE;
       let key = base, face = p.facing;
@@ -609,7 +629,8 @@ const R = {
       else if (p.swingT > 0 && (!it || it.cls === 'melee')) key = base + '_melee_' + (sw < 0.45 ? 0 : 1);
       else if (it && it.cls !== 'melee' && (!p.moving || shooting || p.reloadT > 0)) key = base + (it.cls === 'pistol' ? '_pistol' : '_gun');
       else if (p.moving) key = Sprites.walkKey(base, p.walk * 0.85);
-      const legKey = p.moving && !p.climb ? Sprites.walkKey(base, p.walk * 0.85) : null;
+      if (realCrouch) key = base + '_crouch';
+      const legKey = p.moving && !p.climb && !realCrouch ? Sprites.walkKey(base, p.walk * 0.85) : null;
       if (!p.climb) Sprites.shadow(this.ctx, p.x, y, 18);
       if (p.noiseFx) { // how far that footstep / rummage carried
         const c = this.ctx, k = 1 - p.noiseFx.t / p.noiseFx.max;
@@ -617,27 +638,37 @@ const R = {
         c.beginPath(); c.ellipse(p.x, y, p.noiseFx.r * (0.35 + 0.65 * k), 10 + 14 * k, 0, 0, 7); c.stroke(); c.restore();
       }
       // empty-handed pose + the weapon actually held, placed at the grip point found during processing
-      const bareKey = key.includes('_melee_') ? key.replace('_melee_', '_melee_bare_') : key.endsWith('_gun') ? key + '_bare' : null;
+      const bareKey = key.includes('_melee_') ? key.replace('_melee_', '_melee_bare_') : (key.endsWith('_gun') || key.endsWith('_pistol') || key.endsWith('_crouch')) ? key + '_bare' : null;   // _pistol_bare only once those frames exist
       const bm = bareKey && Sprites.meta(bareKey), wa = w && WEAPON_ART[w.id] && Parts.weapon(w.id);
       this.muzzle = null;
       if (bm && bm.ga != null && Override.get(bareKey) && (wa || !w)) {
         const c = this.ctx, k = sc / SPR_PPU, ws = sc * (!it || it.cls === 'melee' ? 1 : 1.05);
-        const gx = p.x + face * (bm.gx - bm.ax) * k, gy = y + (bm.gy - bm.ay) * k;
-        const ang = !it || it.cls === 'melee' ? bm.ga : bm.ga + aimTilt(aim);
-        if (legKey) Sprites.drawSplit(c, bareKey, legKey, p.x, y, face, sc, null, p.walk * 0.7, 0); else Sprites.draw(c, bareKey, p.x, y, face, sc);
+        const pr = legKey && Puppet.rig(base), yb = y + (pr ? Puppet.bob(pr, p.walk * 0.85 * Math.PI / 2) * k : 0);   // puppet legs lift the body: keep the gun in the hands
+        const gx = p.x + face * (bm.gx - bm.ax) * k, gy = yb + (bm.gy - bm.ay) * k;
+        const ang = !it || it.cls === 'melee' ? bm.ga : bm.ga + (realCrouch ? 0.55 : p._crouch ? 0.8 : aimTilt(aim));
+        if (legKey) Sprites.drawSplit(c, bareKey, legKey, p.x, y, face, sc, null, p.walk * 0.85, 0); else Sprites.draw(c, bareKey, p.x, y, face, sc);
+        let L = wa ? (wa.w - wa.px) * ws : 0;
         if (wa) { // bare hands: punch with the empty-hand pose, no weapon drawn
           c.save(); c.translate(gx, gy); c.scale(face, 1); c.rotate(ang);
-          Art.draw(c, wa, -wa.px * ws, -wa.py * ws, wa.w * ws, wa.h * ws);
+          const G = wa.ext && WPN_GRIP[w.id], img = wa.img;
+          if (G && img.naturalWidth) { // painted gun: put its real grip in the hand so the stock reaches the shoulder
+            const kk = Math.min(wa.w * ws / img.naturalWidth, wa.h * ws / img.naturalHeight);
+            c.drawImage(img, -G[0] * kk, -G[1] * kk, img.naturalWidth * kk, img.naturalHeight * kk);
+            L = (img.naturalWidth - G[0]) * kk;
+          } else Art.draw(c, wa, -wa.px * ws, -wa.py * ws, wa.w * ws, wa.h * ws);
           c.restore();
         }
-        // redraw the fist over the handle so the hand wraps the grip
-        c.save(); c.beginPath(); c.arc(gx, gy, 6.5 * sc, 0, 7); c.clip(); Sprites.draw(c, bareKey, p.x, y, face, sc); c.restore();
-        if (it && it.cls !== 'melee') { const L = (wa.w - wa.px) * ws; this.muzzle = { dx: (gx - p.x) * face + Math.cos(ang) * L, dy: y - gy - Math.sin(ang) * L }; }
+        // redraw the hands over the gun so they wrap the grip (rear) and the handguard (front)
+        const hands = [[gx, gy]];
+        if (it && it.cls !== 'melee' && bm.fx != null) hands.push([p.x + face * (bm.fx - bm.ax) * k, yb + (bm.fy - bm.ay) * k]);
+        for (const [hx, hy] of hands) { c.save(); c.beginPath(); c.arc(hx, hy, 6.5 * sc, 0, 7); c.clip(); Sprites.draw(c, bareKey, p.x, yb, face, sc); c.restore(); }
+        if (it && it.cls !== 'melee') this.muzzle = { dx: (gx - p.x) * face + Math.cos(ang) * L, dy: y - gy - Math.sin(ang) * L };
       } else if (legKey) {
         const ph = p.walk * 0.85, sprint = Math.abs(p.vx || 0) > p.spd * 1.15;
-        Sprites.drawSplit(this.ctx, key, legKey, p.x, y + stepBob(ph, 1.4 * sc) + 0.7 * sc, face, sc, null, ph, 0);
+        Sprites.drawSplit(this.ctx, key, legKey, p.x, Puppet.rig(base) ? y : y + stepBob(ph, 1.4 * sc) + 0.7 * sc, face, sc, null, ph, 0);
       } else Sprites.draw(this.ctx, key, p.x, y, face, sc);
     } else this.drawHuman(p.x, y, { rig: Art.char(G.char), scale: (G.char === 'joe' ? 1.1 : 1) * CHAR_SCALE, facing: p.facing, walk: p.walk, moving: p.moving, pack: true, weapon: w && w.id, att: w && w.att, aim, swing: sw, climb: !!p.climb });
+    if (crouch && !realCrouch) this.ctx.restore();
     this.ctx.globalAlpha = 1;
     // hp bar above
     const ctx = this.ctx;
@@ -659,14 +690,17 @@ const R = {
       }
       let key = b;
       const stride = 22 * sc * (z.type === 'runner' ? 1.3 : z.type === 'brute' ? 1.2 : 1);
+      // attack_0 is the upright arms-up "roar" pose: it reads much bigger than the hunched body, so it is only used
+      // for the short alert moment (never while being hit or standing in melee range), and drawn a bit smaller
+      let lean = 0, ks = 1;
       if (z.atkCd > 0.65 && (z.blockedBy || Math.abs(z.x - run.p.x) < z.rad + 40)) key = b + '_attack_1';
-      else if (z.alertT > 0) key = b + '_attack_0';
-      else if (!z.mv && (z.blockedBy || (z.state === 'chase' && Math.abs(z.x - run.p.x) < z.rad + 30 && run.yOf(z) === run.yOf(run.p)))) key = b + '_attack_0';
+      else if (z.alertT > 0 && z.hitT <= 0) { key = b + '_attack_0'; ks = ROAR_FIX[z.type] || 0.92; }
       else if (z.mv || z.climb) key = Sprites.walkKey(b, (z.dist || 0) / stride);
+      if (z.hitT > 0) lean = -0.1;   // flinch back when hit instead of swapping poses
       Sprites.shadow(ctx0, z.x, y0, 18 * sc);
       const f = z.hitT > 0 ? 'brightness(2.2)' : tint;
-      if (z.mv && !z.climb) { const ph = (z.dist || 0) / stride, lk = Sprites.walkKey(b, ph); Sprites.drawSplit(ctx0, key, lk, z.x, y0 + stepBob(ph, 1.2 * sc) + 0.6 * sc, z.facing, sc, f, ph, 0); }
-      else Sprites.draw(ctx0, key, z.x, y0, z.facing, sc, f);
+      if (z.mv && !z.climb && !lean) { const ph = (z.dist || 0) / stride, lk = Sprites.walkKey(b, ph); Sprites.drawSplit(ctx0, key, lk, z.x, y0 + stepBob(ph, 1.2 * sc) + 0.6 * sc, z.facing, sc, f, ph, 0); }
+      else Sprites.draw(ctx0, key, z.x, y0, z.facing, sc * ks, f, lean);
       if (z.Z.boss && z.chargeT > 0) { ctx0.strokeStyle = 'rgba(255,60,60,0.6)'; ctx0.lineWidth = 3; for (let i = 0; i < 3; i++) { ctx0.beginPath(); ctx0.moveTo(z.x - z.facing * (50 + i * 16), y0 - 50 - i * 40); ctx0.lineTo(z.x - z.facing * (100 + i * 16), y0 - 50 - i * 40); ctx0.stroke(); } }
       if (z.hp < z.maxHp && !z.Z.boss) { const bw = 34 * sc; ctx0.fillStyle = 'rgba(0,0,0,0.6)'; ctx0.fillRect(z.x - bw / 2, y0 - 104 * sc, bw, 5); ctx0.fillStyle = '#d33'; ctx0.fillRect(z.x - bw / 2 + 1, y0 - 104 * sc + 1, (bw - 2) * Math.max(0, z.hp / z.maxHp), 3); }
       if (z.state === 'idle' && run.map.rooms[z.room].revealed) { ctx0.fillStyle = 'rgba(200,220,255,0.5)'; ctx0.font = '600 13px "Chakra Petch", Kanit, sans-serif'; ctx0.textAlign = 'center'; ctx0.fillText('z z', z.x + 14, y0 - 106 * sc + Math.sin(run.time * 2 + z.ph) * 3); }
@@ -871,29 +905,33 @@ const R = {
     // interaction prompt
     let prompt = null;
     const sv = run.survivor;
-    if (sv && sv.state === 'hiding' && sv.room === p.room && !p.climb && Math.abs(sv.x - p.x) < 60) prompt = '[E] ช่วยเหลือ ' + run.survivorName(sv.who);
+    if (sv && sv.state === 'hiding' && sv.room === p.room && !p.climb && Math.abs(sv.x - p.x) < 60) prompt = '[E] ช่วย';
     else {
       const fu = p.hidden ? null : run.nearFurn(30);
-      if (p.hidden) prompt = `${HIDE_SPOTS[p.hidden.kind]} — [H] ออกมา`;
+      if (p.hidden) prompt = '[H] ออก';
       if (fu) {
         const parts = [];
-        const nth = fu.smax > 1 ? ` (ครั้งที่ ${fu.sdone + 1}/${fu.smax})` : '';
-        if (fu.kind === 'generator' && !run.powered) parts.push(Inv.count(p.backpack, 'fuse') ? '[E] ใส่ฟิวส์เปิดเครื่องปั่นไฟ' : 'เครื่องปั่นไฟ (ต้องใช้ฟิวส์)');
-        if (fu.items && fu.items.length) parts.push(`[E] เปิดดู  [F] เก็บทั้งหมด (${fu.items.length})`);
-        if (fu.loot && !fu.searched) parts.push(run.searching === fu ? 'กำลังค้นหา' + nth + '...' : (fu.sdone ? 'ยืนนิ่ง = ค้นลึกขึ้น' + nth : 'ยืนนิ่งเพื่อค้น ' + FURN[fu.kind].n + nth));
-        if (HIDE_SPOTS[fu.kind]) parts.push('[H] ' + HIDE_SPOTS[fu.kind]);
+        // short "[key] verb" hints, same style everywhere
+        if (fu.kind === 'generator' && !run.powered) parts.push(Inv.count(p.backpack, 'fuse') ? '[E] ใส่ฟิวส์' : 'ไม่มีฟิวส์');
+        if (fu.items && fu.items.length) parts.push('[E] เปิดดู', '[F] เก็บหมด');
+        // while searching the progress bar says it all, so the hint is hidden
+        if (fu.loot && !fu.searched && !fu.lock && run.searching !== fu) parts.push(`[${(fu.items && fu.items.length) || run.doorNear() ? 'Q' : 'Q/E'}] ค้น`);
+        if (HIDE_SPOTS[fu.kind]) parts.push('[H] ซ่อน');
         if (parts.length) prompt = parts.join('  ·  ');
       }
       const lt = !p.hidden && run.lockTarget();
-      if (lt && !run.pick) prompt = lt.lock.pickOnly ? `🔒 ล็อกนิรภัย ระดับ ${lt.lock.tier}  ·  [E] สะเดาะเท่านั้น (กิ๊บ ${Inv.count(p.backpack, 'lockpick')})  ·  งัดไม่ได้` : `ล็อกระดับ ${lt.lock.tier}  ·  [E] สะเดาะ (กิ๊บ ${Inv.count(p.backpack, 'lockpick')})  ·  [F] งัด (เสียงดัง)`;
-      else if (fu && smashInfo(fu) && !run.pick && !prompt) prompt = 'ตีด้วยอาวุธ = ทุบทิ้งแยกวัสดุ';
-      else if (fu && smashInfo(fu) && prompt && !prompt.includes('[B')) prompt += fu.loot && !fu.searched ? '  ·  ตีพัง = ของข้างในเสียหาย' : '  ·  ตี = ทุบแยกวัสดุ';
+      const dn0 = lt && lt.fu && run.doorNear(), doorFirst = dn0 && Math.abs(dn0.x - p.x) < Math.abs(lt.fu.x - p.x) - lt.fu.w / 2 + 4;
+      if (lt && !run.pick && doorFirst) prompt = `[E] ${dn0.closed ? 'เปิด' : 'ปิด'}`;
+      else if (lt && !run.pick) prompt = `[E] สะเดาะ (${Inv.count(p.backpack, 'lockpick')})` + (lt.lock.pickOnly ? '' : '  ·  [F] งัด');
+      else if (fu && smashInfo(fu) && !run.pick && !prompt) prompt = '[โจมตี] พัง';
+      else if (fu && smashInfo(fu) && prompt && !prompt.includes('[B')) prompt += '  ·  [โจมตี] พัง';
+      const dn = !p.hidden && !run.pick && run.doorNear();
+      if (dn && prompt && !prompt.includes('[E] เปิด') && !prompt.includes('[E] ปิด')) prompt = `[E] ${dn.closed ? 'เปิด' : 'ปิด'}  ·  ` + prompt;
       if (!prompt && run.site && !p.hidden) {
         const plan = run.barrPlan(run.site), b = run.site.kind === 'door' ? null : run.site.ref.barr, dr = run.site.kind === 'door' ? run.site.ref : null;
-        if (plan) prompt = `[B ค้าง] ${plan.label} — ${run.costText(plan.cost)}`;
-        else if (b) prompt = `บาริเคดระดับ ${b.lvl} (สูงสุด) · ${Math.ceil(b.hp)}/${b.max}`;
-        else if (dr) prompt = `ประตูระดับ ${dr.lvl} (สูงสุด) · ${Math.ceil(dr.hp)}/${dr.max}`;
-        if (dr && !dr.broken && run.doorNear() === dr) prompt = `[E] ${dr.closed ? 'เปิดประตู' : 'ปิดประตู'}  ·  ` + prompt;
+        if (plan) prompt = `[B ค้าง] ${({ build: 'ปิดตาย', fix: 'บาริเคต', repair: 'ซ่อม', up: 'เสริม' })[plan.act] || plan.label}${plan.act === 'up' ? ' Lv' + plan.lvl : ''}`;
+        if (dr && !dr.broken && run.doorNear() === dr) prompt = `[E] ${dr.closed ? 'เปิด' : 'ปิด'}` + (prompt ? '  ·  ' + prompt : '');
+        if (dr && dr.broken && !dr.barr) prompt = '[H] ซ่อน' + (prompt ? '  ·  ' + prompt : '');
       }
       if (p.build) {
         const k = Math.min(1, p.build.t / p.build.max), bw = 90;
@@ -906,12 +944,18 @@ const R = {
         else if (run.ladderNear(p, false)) prompt = '[S] ปีนลง';
       }
     }
+    if (run.searching) prompt = null;   // nothing to press while searching; keeps the label off the progress bar
     if (prompt) {
+      // lift the label above a furniture progress bar (tall furniture puts the bar at label height)
+      const nf = !p.hidden && run.nearFurn(30), bar = nf && nf._barY != null ? nf._barY : null;
+      const dy = bar != null && bar < y - 116 && bar > y - 160 ? bar - 8 - (y - 122) : 0;
+      ctx.save(); ctx.translate(0, dy);
       ctx.font = '600 15px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'center';
       const tw = ctx.measureText(prompt).width + 22;
       ctx.fillStyle = 'rgba(12,13,15,0.9)'; ctx.beginPath(); ctx.moveTo(p.x - tw / 2 + 7, y - 150); ctx.lineTo(p.x + tw / 2, y - 150); ctx.lineTo(p.x + tw / 2, y - 129); ctx.lineTo(p.x + tw / 2 - 7, y - 122); ctx.lineTo(p.x - tw / 2, y - 122); ctx.lineTo(p.x - tw / 2, y - 143); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = 'rgba(242,176,30,0.7)'; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.fillStyle = '#f3ead2'; ctx.fillText(prompt, p.x, y - 131);
+      ctx.restore();
     }
     // boss hp bar in world
   },
@@ -963,12 +1007,12 @@ const R = {
     pill(dx, dy, 220, 52);
     ctx.fillStyle = run.level >= run.bossLvl - 1 ? '#c0392b' : '#8e2b2b';
     ctx.beginPath(); ctx.arc(dx + 26, dy + 26, 19, 0, 7); ctx.fill();
-    const frac = (run.dangerPts % 45) / 45;
+    const frac = run.level >= run.maxLevel ? 1 : (run.dangerPts % run.dangerStep) / run.dangerStep;
     ctx.strokeStyle = '#ff6a5c'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(dx + 26, dy + 26, 21, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.font = '800 18px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(run.level, dx + 26, dy + 33);
     ctx.textAlign = 'left'; ctx.font = '600 13px "Chakra Petch", Kanit, sans-serif'; ctx.fillStyle = '#ffb3a8'; ctx.fillText('ระดับอันตราย', dx + 54, dy + 20);
     ctx.font = '400 12px "Chakra Petch", Kanit, sans-serif'; ctx.fillStyle = '#ccc';
-    if (!run.bossSpawned) ctx.fillText(`บอสมาเมื่อ: ระดับ ${run.bossLvl} หรือฆ่า ${run.kills}/${run.bossKills}`, dx + 54, dy + 38);
+    if (!run.bossSpawned) ctx.fillText(run.bossLvl >= 99 ? `ไม่มีบอส · สูงสุดระดับ ${run.maxLevel}` : `บอสมาเมื่อ: ระดับ ${run.bossLvl} หรือฆ่า ${run.kills}/${run.bossKills}`, dx + 54, dy + 38);
     else if (!run.bossKilled) { ctx.fillStyle = '#ff6a5c'; ctx.fillText(`☠ บอสอยู่ในอาคาร${(run.bosses || []).filter(b => !b.dead).length > 1 ? ' ×' + run.bosses.filter(b => !b.dead).length : ''}! (ไม่ต้องสู้ก็ได้)`, dx + 54, dy + 38); }
     else { ctx.fillStyle = '#9dff8a'; ctx.fillText('✔ กำจัดบอสแล้ว', dx + 54, dy + 38); }
     // wave timer
@@ -978,7 +1022,7 @@ const R = {
       ctx.textAlign = 'left'; ctx.font = '700 14px "Chakra Petch", Kanit, sans-serif';
       const mm = Math.max(0, Math.ceil(run.waveT)), t = `${Math.floor(mm / 60)}:${String(mm % 60).padStart(2, '0')}`;
       ctx.fillStyle = warn ? '#fff' : raid ? '#ff8a6a' : '#ddd';
-      ctx.fillText(raid && !warn ? `🧟 ฝูงกำลังบุก! · ถัดไป ${t}` : `🧟 ฝูงซอมบี้ถัดไป  ${t}`, dx + 14, wy + 22);
+      ctx.fillText(run.waveT > 1e6 ? '🧟 ไม่มีฝูงซอมบี้ (ด่านสอนเล่น)' : raid && !warn ? `🧟 ฝูงกำลังบุก! · ถัดไป ${t}` : `🧟 ฝูงซอมบี้ถัดไป  ${t}`, dx + 14, wy + 22);
       if (warn) {
         const a = 0.75 + 0.25 * Math.sin(run.time * 7);
         ctx.globalAlpha = a; ctx.textAlign = 'center';
@@ -1003,11 +1047,13 @@ const R = {
     const oh = 40 + Math.max(1, objs.length) * 24;
     pill(ox, oy, ow, oh);
     ctx.textAlign = 'left'; ctx.fillStyle = '#ffd37a'; ctx.font = '700 14px "Chakra Petch", Kanit, sans-serif';
-    ctx.fillText(run.farm ? `${run.loc.n} (ฟาร์มของ)` : `${run.loc.n}`, ox + 14, oy + 24);
+    ctx.fillText(`Lv ${run.lv} · ${run.loc.n}` + (run.farm ? ' (ฟาร์มของ)' : ''), ox + 14, oy + 24);
     ctx.font = '400 13px "Chakra Petch", Kanit, sans-serif';
     if (!objs.length) { ctx.fillStyle = '#bbb'; ctx.fillText(run.restricted ? 'พื้นที่หวงห้าม — หาของแล้วไปจุดอพยพ' : 'หาของได้อิสระ แล้วไปจุดอพยพเพื่อกลับฐาน', ox + 14, oy + 48); }
     objs.forEach((o, i) => {
       const yy = oy + 48 + i * 24;
+      // a mission item already in the backpack: found, now carry it out (it only counts once you extract)
+      if (o.type === 'item' && o.done) { ctx.fillStyle = '#8dff8a'; ctx.fillText(`✔ ได้${ITEMS[o.item].n}แล้ว — นำกลับฐาน`, ox + 14, yy); return; }
       ctx.fillStyle = o.done ? '#8dff8a' : '#e8e8e8';
       ctx.fillText((o.done ? '✔ ' : '◻ ') + o.label + (o.target > 1 ? `  ${o.cur}/${o.target}` : ''), ox + 14, yy);
     });
@@ -1015,8 +1061,8 @@ const R = {
     // minimap
     this.drawMinimap(run, ox, oy, ow, 150);
     // bars
-    const bx = 14, by = H - 112;
-    pill(bx, by, 250, 98);
+    const bx = 14, by = H - 133;
+    pill(bx, by, 250, 119);
     const bar = (i, label, v, max, col) => {
       const yy = by + 14 + i * 21;
       ctx.fillStyle = '#ccc'; ctx.font = '500 12px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'left'; ctx.fillText(label, bx + 12, yy + 10);
@@ -1024,12 +1070,13 @@ const R = {
       ctx.fillStyle = col; ctx.fillRect(bx + 76, yy, 160 * U.clamp(v / max, 0, 1), 11);
       ctx.fillStyle = 'rgba(0,0,0,0.45)'; for (let k = 1; k < 20; k++) ctx.fillRect(bx + 76 + k * 8, yy, 1.5, 11);
       ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(bx + 76, yy, 160 * U.clamp(v / max, 0, 1), 2);
-      ctx.fillStyle = '#fff'; ctx.font = '600 10px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(Math.round(v), bx + 232, yy + 9.5);
+      ctx.fillStyle = '#fff'; ctx.font = '600 10px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(Math.round(v) + (i === 0 ? '%' : ''), bx + 232, yy + 9.5);
     };
-    bar(0, '❤ เลือด', p.hp, p.maxHp, '#e04a4a');
-    bar(1, '🍖 ความอิ่ม', p.hunger, 100, '#e0a03a');
-    bar(2, '⚡ สตามินา', p.stam, 100, '#e0d040');
-    bar(3, '☣ ติดเชื้อ', p.inf, 100, '#7ad040');
+    bar(0, '🛡 เกราะ', p.armor ? armorPct(p.armor) : 0, 100, '#7fb8ff');
+    bar(1, '❤ เลือด', p.hp, p.maxHp, '#e04a4a');
+    bar(2, '🍖 ความอิ่ม', p.hunger, 100, '#e0a03a');
+    bar(3, '⚡ สตามินา', p.stam, 100, '#e0d040');
+    bar(4, '☣ ติดเชื้อ', p.inf, 100, '#7ad040');
     // weapons
     const ws = p.weapons, sw = 120, sx = W / 2 - (sw * 3 + 20) / 2, sy = H - 86;
     for (let i = 0; i < 3; i++) {
@@ -1060,7 +1107,7 @@ const R = {
     ctx.fillStyle = used >= p.cap ? '#ff6a5c' : '#fff'; ctx.font = '700 13px "Chakra Petch", Kanit, sans-serif'; ctx.fillText(`${used}/${p.cap}`, qx + 45, qy + 58);
     // hints
     ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '400 12px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(`A/D เดิน · W/S ปีนบันได · Shift วิ่ง · Z ย่อง · คลิก/Space โจมตี · R รีโหลด · H ซ่อน · B ค้าง บาริเคด ${p.mods.engineer ? '· C ประดิษฐ์ ' : ''}· 4-9 ปุ่มลัด · Tab เป้ · ออกได้ที่จุดอพยพสีเขียว · Esc หยุด`, W - 14, qy - 10);
+    ctx.fillText(`${Keys.lbl('left')}/${Keys.lbl('right')} เดิน · ${Keys.lbl('up')}/${Keys.lbl('down')} ปีนบันได · ${Keys.lbl('sprint')} วิ่ง · ${Keys.lbl('sneak')} ย่อง · คลิก/${Keys.lbl('attack')} โจมตี · คลิกขวาค้าง เล็ง · ${Keys.lbl('reload')} รีโหลด · ${Keys.lbl('search')} ค้น · ${Keys.lbl('hide')} ซ่อน · ${Keys.lbl('barricade')} ค้าง บาริเคด ${p.mods.engineer ? '· ' + Keys.lbl('craft') + ' ประดิษฐ์ ' : ''}· 4-9 ปุ่มลัด · ${Keys.lbl('inv')} เป้ · ออกได้ที่จุดอพยพสีเขียว · Esc หยุด`, W - 14, qy - 10);
     if (run.pick) this.drawPickUI(run);
     this.drawCraftUI(run);
     this.drawExtractHUD(run);
