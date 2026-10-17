@@ -29,6 +29,7 @@ jobs:
           cp index.html _site/
           cp -r css js _site/
           cp -r assets/sprites _site/assets/
+          cp -r assets/share _site/assets/   # link-preview image (og:image)
           touch _site/.nojekyll
 
       # Dev console password: store it as repo secret CONSOLE_PASSWORD. Only a salted PBKDF2 hash is published.

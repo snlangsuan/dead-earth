@@ -473,8 +473,16 @@ const Run = {
       if (p.climb) p.moving = up || down;
       if (p.moving) p.walk += dt * 8;
     } else {
+      if (!down) { p.kbDown = false; p.downHoldT = 0; }
       if (up) { const l = this.ladderNear(p, true); if (l) { p.x = l.x; p.vx = 0; p.climb = { lad: l, t: 0.02 }; } }
-      else if (down) { const l = this.ladderNear(p, false); if (l) { p.x = l.x; p.vx = 0; p.climb = { lad: l, t: 0.98 }; } }
+      else if (down) {
+        const l = this.ladderNear(p, false);
+        // holding a gun with zombies visible below: S crouches and aims down the hatch; keep holding (0.6 s) to climb down anyway
+        const w = this.curWeapon(), gun = w && ITEMS[w.id].cls !== 'melee' && dur(w) > 0;
+        const aimHatch = l && gun && this.hatchUnder && this.hatchUnder() && this.downCands(l).length > 0;
+        p.kbDown = !!aimHatch; p.downHoldT = (p.downHoldT || 0) + dt;
+        if (l && (!aimHatch || p.downHoldT >= 0.6)) { p.kbDown = false; p.x = l.x; p.vx = 0; p.climb = { lad: l, t: 0.98 }; }
+      }
       // facing: mouse-held attack aims at the cursor; otherwise movement keys turn the character;
       // standing still, the cursor turns you only if it moved after your last step
       const aimMouse = (Input.mouse.down || p.aiming) && R.cam;

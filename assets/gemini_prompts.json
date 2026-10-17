@@ -293,7 +293,7 @@
  ],
  [
   "furn_bunk",
-  "A metal bunk bed, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A metal military bunk bed seen from its long side: two thin mattresses stacked, four straight vertical corner posts, a short ladder at one end, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_sofa",
@@ -301,7 +301,7 @@
  ],
  [
   "furn_desk",
-  "A office desk with an old computer, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "An office desk with a drawer unit and an old CRT computer monitor and keyboard on it, the desktop seen edge-on as a thin horizontal band, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_bookshelf",
@@ -321,7 +321,7 @@
  ],
  [
   "furn_hospbed",
-  "An old hospital bed with IV stand, strict 2D SIDE VIEW (profile), seen exactly from the side like in a side-scrolling platformer game, no perspective, no top-down view, isolated, no floor. The long side of the bed faces the viewer. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "An old hospital bed seen exactly from its long side, with a thin mattress, side rail, wheels on straight legs, and an IV pole standing at the head end, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_locker",
@@ -337,11 +337,11 @@
  ],
  [
   "furn_register",
-  "A cash register counter, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A shop checkout counter with an old cash register sitting on it, the countertop seen edge-on as a thin horizontal band, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_toolbench",
-  "A workbench with tools, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A wooden workbench with a vise and hand tools lying along it, the tabletop seen edge-on as a thin horizontal band, a shelf underneath, straight legs, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_car",
@@ -349,11 +349,11 @@
  ],
  [
   "furn_dumpster",
-  "A green dumpster, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A green metal dumpster with its lid closed, seen straight from the front, lid seen edge-on as a thin band, small wheels, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_safe",
-  "A steel safe, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A heavy steel safe with a combination dial and handle on its front door, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_filecab",
@@ -369,7 +369,7 @@
  ],
  [
   "furn_labtable",
-  "A laboratory table with glass beakers, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A laboratory table with glass beakers, flasks and test tubes standing on it, the tabletop seen edge-on as a thin horizontal band, straight legs, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_server",
@@ -397,7 +397,7 @@
  ],
  [
   "furn_generator",
-  "A yellow electric generator, strict flat front elevation view, perfectly straight-on orthographic view like in a side-scrolling platformer game, camera exactly level with the middle of the object, no top surface visible, no side faces visible, no perspective, standing on an invisible floor line, isolated, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+  "A yellow portable electric generator in a tubular steel frame, engine and control panel on its front face, seen straight from the front, drawn as a pure flat elevation for a 2D side-scrolling game: camera exactly level and exactly perpendicular, like a technical elevation drawing, all vertical edges perfectly vertical and parallel, all horizontal edges perfectly horizontal, NO top surface visible, NO side panel visible, no depth, no 3/4 angle, no perspective, no vanishing point, isolated, no floor line, no shadow, old, dirty and worn. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
   "furn_body",

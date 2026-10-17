@@ -42,6 +42,7 @@ Object.assign(Run, {
   wantDown(anyTime) {
     const p = this.p, w = this.curWeapon();
     if (!w || ITEMS[w.id].cls === 'melee' || (!anyTime && p.atkCd > 0)) return null;
+    if (p.kbDown) return this.downTarget();   // holding S at the hatch
     if (p.aiming) return p.aimDown ? this.downTarget() : null;
     const d = this.downTarget(); if (!d) return null;
     const dd = Math.hypot(d.z.x - p.x, FH);
