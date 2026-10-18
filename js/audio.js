@@ -14,17 +14,17 @@ const Snd = {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     const c = this.ctx = new AC();
-    this.master = c.createGain(); this.comp = c.createDynamicsCompressor();
+    this.master = c.createGain(); this.master.gain.value = 0; this.comp = c.createDynamicsCompressor();
     this.comp.threshold.value = -16; this.comp.knee.value = 12; this.comp.ratio.value = 4;
     this.master.connect(this.comp); this.comp.connect(c.destination);
-    this.musicBus = c.createGain(); this.sfxBus = c.createGain();
+    this.musicBus = c.createGain(); this.sfxBus = c.createGain(); this.musicBus.gain.value = 0; this.sfxBus.gain.value = 0;
     this.musicBus.connect(this.master); this.sfxBus.connect(this.master);
     // shared reverb (generated impulse response)
     this.verb = c.createConvolver(); this.verb.buffer = this.impulse(2.8, 2.6);
     this.verbIn = c.createGain(); this.verbIn.gain.value = 1; this.verbIn.connect(this.verb); this.verb.connect(this.master);
     // reverb sends go through their own volume so the music / effects sliders also silence the echo
-    this.musicSend = c.createGain(); this.musicSend.connect(this.verbIn);
-    this.sfxSend = c.createGain(); this.sfxSend.connect(this.verbIn);
+    this.musicSend = c.createGain(); this.musicSend.gain.value = 0; this.musicSend.connect(this.verbIn);
+    this.sfxSend = c.createGain(); this.sfxSend.gain.value = 0; this.sfxSend.connect(this.verbIn);
     this.noiseBuf = this.makeNoise(2);
     this.ok = true; this.applyVolumes();
     Music.start();
@@ -32,11 +32,14 @@ const Snd = {
   applyVolumes() {
     if (!this.ok) return;
     const s = Settings.v, t = this.ctx.currentTime;
-    this.master.gain.setTargetAtTime(s.mute ? 0 : s.master, t, 0.05);
-    this.musicBus.gain.setTargetAtTime(s.music * 0.55, t, 0.1);
-    this.sfxBus.gain.setTargetAtTime(s.sfx, t, 0.05);
-    this.musicSend.gain.setTargetAtTime(s.music * 0.55, t, 0.1);
-    this.sfxSend.gain.setTargetAtTime(s.sfx, t, 0.05);
+    // a value of 0 is set exactly (not approached), so silence is real silence on every browser
+    const set = (p, v, tau) => { p.cancelScheduledValues(t); if (v <= 0) p.setValueAtTime(0, t); else { p.setValueAtTime(p.value, t); p.setTargetAtTime(v, t, tau); } };
+    set(this.master.gain, s.mute ? 0 : s.master, 0.05);
+    set(this.musicBus.gain, s.music * 0.55, 0.1);
+    set(this.sfxBus.gain, s.sfx, 0.05);
+    set(this.musicSend.gain, s.music * 0.55, 0.1);
+    set(this.sfxSend.gain, s.sfx, 0.05);
+    if (typeof Music !== 'undefined') Music.setRoot();
   },
   makeNoise(sec) {
     const c = this.ctx, b = c.createBuffer(1, c.sampleRate * sec, c.sampleRate), d = b.getChannelData(0);
@@ -202,6 +205,7 @@ const Music = {
     this.nextNote = c.currentTime + 0.5;
     this.timer = setInterval(() => this.tick(), 100);
   },
+  silent() { return Settings.v.mute || Settings.v.music <= 0 || Settings.v.master <= 0; },
   setMode(m) { if (this.mode === m) return; this.mode = m; this.setRoot(); },
   setRoot() {
     if (!this.drone) return;
@@ -210,7 +214,8 @@ const Music = {
     this.drone.oscs[0].frequency.setTargetAtTime(hz(root), t, 1.5);
     this.drone.oscs[1].frequency.setTargetAtTime(hz(root + 7), t, 1.5);
     this.drone.oscs[2].frequency.setTargetAtTime(hz(root - 12 + 12), t, 1.5);
-    this.drone.g.gain.setTargetAtTime(this.mode === 'base' ? 0.16 : 0.22, t, 2);
+    const g = this.drone.g.gain; g.cancelScheduledValues(t);
+    if (this.silent()) g.setValueAtTime(0, t); else { g.setValueAtTime(Math.max(0.0001, g.value), t); g.setTargetAtTime(this.mode === 'base' ? 0.16 : 0.22, t, 2); }
   },
   tick() {
     if (!Snd.ok) return;
@@ -224,6 +229,7 @@ const Music = {
     this.tension += (Math.min(1, want) - this.tension) * 0.05;
     this.drone.lp.frequency.setTargetAtTime(350 + this.tension * 900, now, 0.5);
     const hp = Run.active && Run.p ? Run.p.hp / Run.p.maxHp : 1;
+    if (this.silent()) { this.nextNote = now + 0.25; return; }
     while (this.nextNote < now + 0.25) {
       const t = this.nextNote, T = this.tension;
       const bpm = this.mode === 'run' ? 62 + T * 58 : 60, step = 60 / bpm / 2;

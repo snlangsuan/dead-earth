@@ -54,13 +54,14 @@ const InvUI = {
   },
   // a kit dropped onto a piece that is NOT worn (in the bag, a pocket or the stash)
   kitOnItem(src, o) {
-    if (!Wear.fixable(o)) return false;
+    if (!Wear.fixable(o) && ITEMS[o.id].t !== 'weapon') return false;
     const run = Run.active && !Run.over;
     return this.applyKit(run ? 'run' : 'base', run ? Run.p : G, null, o, src, null);
   },
   // sewing kit: clothes / trousers / bag / armor +30% · repair kit: armor only (base: full · run: +40%)
   applyKit(mode, H, slot, e, src, rer) {
     const x = src.entry, xi = ITEMS[x.id], it = ITEMS[e.id], armor = it.t === 'armor';
+    if (it.t === 'weapon') return this.kitOnWeapon(mode, x, e, src, rer);
     if (x.id === 'repairkit' && !armor) { toast('ชุดซ่อมอาวุธใช้กับเกราะหรืออาวุธ — เสื้อผ้าใช้ชุดเย็บผ้า', 'warn'); return true; }
     if (!Wear.needsFix(e)) { toast(Wear.why(e)); return true; }
     if (mode === 'run') {
@@ -73,6 +74,26 @@ const InvUI = {
     const r = Wear.fix(H, slot, e, x.id === 'repairkit' ? null : 30); if (!r) { toast(Wear.why(e)); return true; }
     for (let i = 0; i < need; i++) if (Run.useKitEntry(x)) { GridUI.removeFromSource(src); break; }
     Wear.refit(G); toast((x.id === 'repairkit' ? 'ซ่อม' : 'ปะ') + Wear.fixMsg(e, r), 'good'); State.save(); rer && rer(); return true;
+  },
+  // repair kit dropped on a weapon (in the stash / bag): at base it repairs to the ceiling; in a run it starts a field repair
+  kitOnWeapon(mode, x, w, src, rer) {
+    const xi = ITEMS[x.id], it = ITEMS[w.id];
+    if (x.id !== 'repairkit') { toast(`อาวุธใช้ชุดซ่อมอาวุธ — ${xi.n}ใช้กับเสื้อผ้า`, 'warn'); return true; }
+    const cap = repairCap(w);
+    if (cap <= 0) { toast(`${it.n} ซ่อมไม่ได้แล้ว (ซ่อมมาหลายครั้งเกินไป)`, 'warn'); return true; }
+    if (dur(w) >= cap) { toast(`${it.n} ซ่อมได้สูงสุด ${cap}% — ตอนนี้ ${Math.round(dur(w))}% แล้ว`); return true; }
+    if (mode === 'run') {
+      const i = Run.p.weapons.indexOf(w);
+      if (i < 0) { toast('ถืออาวุธไว้ในช่องอาวุธก่อน แล้วค่อยซ่อม', 'warn'); return true; }
+      Run.p.cur = i; if (Run.startFieldRepair(w)) { toast(`กำลังซ่อม${it.n}... ยืนนิ่งไว้`); UIRun.close(); }
+      return true;
+    }
+    const need = Wear.kitUses(w), have = Wear.usesIn(x, x.id);
+    if (have < need) { toast(`${it.n} ต้องใช้${xi.n} ${need} ครั้ง — ชุดนี้เหลือ ${have} ครั้ง`, 'warn'); return true; }
+    applyRepair(w, null);
+    for (let i = 0; i < need; i++) if (Run.useKitEntry(x)) { GridUI.removeFromSource(src); break; }
+    Snd.hammer && Snd.hammer(); toast(`ซ่อม ${it.n} → ${Math.round(w.dur)}%` + (repairCap(w) > 0 ? ` · ครั้งหน้าซ่อมได้สูงสุด ${repairCap(w)}%` : ' · ซ่อมครั้งสุดท้ายแล้ว'), 'good');
+    State.save(); rer && rer(); return true;
   },
   slotActs(mode, slot, e, rer) {
     const it = ITEMS[e.id], acts = [['ข้อมูล', () => GridUI.showInfo(e)]];

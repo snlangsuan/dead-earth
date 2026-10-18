@@ -68,7 +68,12 @@ const Sprites = {
 const FURN_TOPS = { desk: [4, '#8a6440'], counter: [2, '#b0aaa0'], labtable: [4, '#d8dde0'], toolbench: [0, '#8a6440'], register: [10, '#6a7078'], crate: [1, '#a88050'], dumpster: [6, '#2e6a40'], safe: [1, '#7a7e82'], filecab: [1, '#9aa2aa'], fridge: [1, '#d0d8dc'], stove: [1, '#5a6066'], medcab: [1, '#d8dde0'], wardrobe: [0, '#6a4a2a'], locker: [1, '#5f7186'], bookshelf: [1, '#5a3e26'], shelfunit: [1, '#6a7078'], server: [1, '#2a2f35'], tvstand: [38, '#5a4030'], weaponrack: [1, '#3a3326'], generator: [14, '#9a7a20'], supply: [6, '#2a70a0'] };
 // body-size correction for the upright roar frame (Gemini drew it larger than the hunched idle)
 // where the rear hand holds each painted gun (pixels in assets/sprites/wpn_<id>.png): pistol grip / stock wrist
-const WPN_GRIP = { smg: [52, 17], shotgun: [55, 13], rifle: [47, 16], sniper: [48, 15], crossbow: [33, 46], pistol: [20, 32], revolver: [22, 38] };
+// grip point in each painted weapon image (px). Melee: the end of the handle, so the hand holds the handle, not thin air
+// carrying (not aiming) a gun this frame? used for the combat stance
+const key0Carry = (p, w, run) => Sprites.meta('char_' + G.char + (ITEMS[w.id].cls === 'pistol' ? '_pcarry' : '_carry') + '_bare') && !(p.aiming || run.time - (p.lastShot || -9) < 1.2 || p.reloadT > 0 || p._crouch || Input.mouse.down);
+const MELEE_LEN = { machete: 0.6 };
+const MELEE_ROT = { machete: 0.5 };   // the painted machete is drawn tilted ~30°: straighten it along the swing   // painted image is drawn diagonally: shorten so its reach matches the knife / bat
+const WPN_GRIP = { knife: [10, 17], machete: [8, 60], bat: [9, 12], fireaxe: [10, 32], katana: [10, 11], smg: [52, 17], shotgun: [55, 13], rifle: [47, 16], sniper: [48, 15], crossbow: [33, 46], pistol: [20, 32], revolver: [22, 38] };
 const ROAR_FIX = { walker: 0.97, runner: 0.92, spitter: 0.97, brute: 0.84, boss: 0.88 };
 const R = {
   cv: null, ctx: null, W: 0, H: 0, cam: null, dpr: 1, stars: null,
@@ -505,8 +510,7 @@ const R = {
     const put = (img, th, px, py, ang, ax, ay, dark) => {
       const k = th / img.naturalHeight, w = img.naturalWidth * k;
       ctx.save(); ctx.translate(px, py); ctx.rotate(ang);
-      if (dark) ctx.filter = 'brightness(0.68)';
-      ctx.drawImage(img, -w * ax, -th * ay, w, th);
+      ctx.drawImage(dark ? FilterCache.get(img, 'brightness(0.68)') : img, -w * ax, -th * ay, w, th);
       ctx.restore();
       return w;
     };
@@ -613,46 +617,113 @@ const R = {
       for (const z of run.zombies) { if (z.dead || z.f !== p.f) continue; const dx = (z.x - p.x) * p.facing; if (dx > 0 && dx < best && dx < 700) { best = dx; t = z; } }
       if (t) aim = U.clamp(Math.atan2((run.yOf(t) - t.Z.r * 3) - (y - 54), Math.abs(t.x - p.x)), -0.6, 0.6);
     }
-    const sw = p.swingT > 0 ? 1 - p.swingT / 0.25 : 0;
+    const sw = p.swingT > 0 ? 1 - p.swingT / (p.swingDur || 0.25) : 0;
     const flick = p.hurtT > 0 && Math.floor(p.hurtT * 30) % 2;
     if (flick) this.ctx.globalAlpha = 0.5;
     const base = 'char_' + G.char;
     const crouch = (p.aimDownT > 0 || ((!p.moving || p.aiming) && run.wantDown && run.wantDown(true))) && w && ITEMS[w.id].cls !== 'melee';
     p._crouch = crouch;
+    // aiming down through the floor: point the gun at what's actually below (locked zombie, the cursor, or down and ahead)
+    let downAng = 0.8;
+    if (crouch) {
+      const d = run.wantDown && run.wantDown(true);
+      if (d) {
+        let tx, ty;
+        if (d.z) { tx = d.z.x; ty = run.yOf(d.z) - 40; }
+        else if (p.aiming) { const mw = R.screenToWorld(Input.mouse.x, Input.mouse.y); tx = mw.x; ty = mw.y; }
+        else { tx = d.l.x + p.facing * 70; ty = floorY(d.l.lo) - 40; }
+        downAng = U.clamp(Math.atan2(ty - (y - 50), Math.abs(tx - p.x) + 12), 0.55, 1.4);
+      }
+    }
+    p._dAng = (p._dAng ?? downAng) + (downAng - (p._dAng ?? downAng)) * 0.25;   // swing onto the new target smoothly
     const realCrouch = crouch && !p.climb && Sprites.meta(base + '_crouch_bare') && Override.get(base + '_crouch_bare');   // kneeling pose (Gemini) when this character has one
-    if (crouch && !realCrouch) { this.ctx.save(); this.ctx.translate(p.x, y); this.ctx.scale(1, 0.86); this.ctx.translate(-p.x, -y); }
+    const skel = Sprites.has(base) && Skel.has(base);   // skeleton-rigged character: crouch / climb / swing / turn are all animated from its bones
+    if (crouch && !realCrouch && !skel) { this.ctx.save(); this.ctx.translate(p.x, y); this.ctx.scale(1, 0.86); this.ctx.translate(-p.x, -y); }
     if (Sprites.has(base)) {
       const it = w && ITEMS[w.id], sc = (G.char === 'joe' ? 1.1 : 1) * CHAR_SCALE;
+      // motion state for the puppet: walk weight eases in/out, gait from movement mode, leg phase from distance, smooth turning
+      const now = run.time, dtp = Math.min(0.05, Math.max(0, now - (p._lt ?? now))); p._lt = now;
+      const rig = Puppet.rig(base);
+      p._amp = (p._amp || 0) + ((p.moving && !p.climb ? 1 : 0) - (p._amp || 0)) * Math.min(1, dtp * (p.moving ? 10 : 7));
+      const gait = p.gait === 'sneak' ? 'sneak' : p.gait === 'run' && Math.abs(p.vx || 0) > p.spd * 1.1 ? 'run' : 'walk';
+      p._gr = (p._gr ?? Puppet.GAIT.walk.rate) + (Puppet.GAIT[gait].rate - (p._gr ?? Puppet.GAIT.walk.rate)) * Math.min(1, dtp * 6);
+      const back = (p.vx || 0) * p.facing < -5 ? -1 : 1, dw = p.walk - (p._lw ?? p.walk); p._lw = p.walk;
+      if (skel) {   // skeleton: the phase comes from the ground covered, so the planted foot stays (nearly) put on the floor
+        p._sl = (p._sl ?? Skel.stepLen(base, sc, gait)) + (Skel.stepLen(base, sc, gait) - (p._sl ?? Skel.stepLen(base, sc, gait))) * Math.min(1, dtp * 6);
+        p._ph = (p._ph || 0) + dw * 16 * Math.PI / p._sl * back;
+      } else p._ph = (p._ph || 0) + dw * 0.85 * Math.PI / 2 * p._gr * back;   // walking backwards: the legs step backwards   // walking backwards: the legs step backwards
+      // turning around: a short turn (0.2 s) — through a front-facing frame when the character has one, otherwise a squash
+      if (p._lf !== p.facing) { if (p._lf != null && !p.climb) p._turnT = Puppet.TURN; p._lf = p.facing; }
+      p._turnT = Math.max(0, (p._turnT || 0) - dtp);
+      const tt = p._turnT > 0 ? 1 - p._turnT / Puppet.TURN : 1, turnKey = base + '_turn';
+      const hasTurn = Sprites.meta(turnKey) && Override.get(turnKey);
+      const turnDip = p._turnT > 0 ? Math.sin(Math.PI * tt) * 3 * sc : 0;
+      p._st = (p._st || 0) + ((w && ITEMS[w.id].cls !== 'melee' && !key0Carry(p, w, run) ? 1 : 0) - (p._st || 0)) * Math.min(1, dtp * 8);
+      Puppet.cur = rig ? { amp: p._amp, gait, ph: p._ph, t: now, stance: p._st, held: w && ITEMS[w.id].cls === 'melee' && !Sprites.meta(base + '_guard_bare') && !['bat', 'fireaxe'].includes(w.id) ? w : null, carry: w && !Sprites.meta(base + '_guard_bare') && ['bat', 'fireaxe'].includes(w.id) ? w : null } : null;
       let key = base, face = p.facing;
       const shooting = run.time - (p.lastShot || -9) < 0.5;
       if (p.climb) { key = base + '_climb'; face = Math.floor(p.walk / 2) % 2 ? 1 : -1; }
       else if (p.swingT > 0 && (!it || it.cls === 'melee')) key = base + '_melee_' + (sw < 0.45 ? 0 : 1);
-      else if (it && it.cls !== 'melee' && (!p.moving || shooting || p.reloadT > 0)) key = base + (it.cls === 'pistol' ? '_pistol' : '_gun');
-      else if (p.moving) key = Sprites.walkKey(base, p.walk * 0.85);
+      else if (it && it.cls === 'melee' && Sprites.meta(base + '_guard_bare')) key = base + '_guard';   // melee: hand-drawn combat guard, weapon in the fist
+      // guns: raised (hand-drawn aim pose) when there's a reason; otherwise the hand-drawn low-ready carry pose when the character has one
+      else if (it && it.cls !== 'melee') {
+        const ck = base + (it.cls === 'pistol' ? '_pcarry' : '_carry');
+        const raise = !Sprites.meta(ck + '_bare') || p.aiming || shooting || run.time - (p.lastShot || -9) < 1.2 || p.reloadT > 0 || p._crouch || Input.mouse.down || aim !== 0;
+        key = raise ? base + (it.cls === 'pistol' ? '_pistol' : '_gun') : ck;
+      }
+      else if (p.moving || (rig && p._amp > 0.04)) key = Sprites.walkKey(base, p.walk * 0.85);
       if (realCrouch) key = base + '_crouch';
-      const legKey = p.moving && !p.climb && !realCrouch ? Sprites.walkKey(base, p.walk * 0.85) : null;
+      const legKey = (p.moving || (rig && p._amp > 0.04)) && !p.climb && !realCrouch ? Sprites.walkKey(base, p.walk * 0.85) : null;
       if (!p.climb) Sprites.shadow(this.ctx, p.x, y, 18);
+      this.ctx.save(); if (turnDip) this.ctx.translate(0, turnDip);   // a small dip while turning around
       if (p.noiseFx) { // how far that footstep / rummage carried
         const c = this.ctx, k = 1 - p.noiseFx.t / p.noiseFx.max;
         c.save(); c.strokeStyle = `rgba(255,220,140,${0.35 * (1 - k)})`; c.lineWidth = 2; c.setLineDash([6, 6]);
         c.beginPath(); c.ellipse(p.x, y, p.noiseFx.r * (0.35 + 0.65 * k), 10 + 14 * k, 0, 0, 7); c.stroke(); c.restore();
       }
       // empty-handed pose + the weapon actually held, placed at the grip point found during processing
-      const bareKey = key.includes('_melee_') ? key.replace('_melee_', '_melee_bare_') : (key.endsWith('_gun') || key.endsWith('_pistol') || key.endsWith('_crouch')) ? key + '_bare' : null;   // _pistol_bare only once those frames exist
+      const bareKey = key.includes('_melee_') ? key.replace('_melee_', '_melee_bare_') : (key.endsWith('_gun') || key.endsWith('_pistol') || key.endsWith('_crouch') || key.endsWith('carry') || key.endsWith('_guard')) ? key + '_bare' : null;   // _pistol_bare only once those frames exist
       const bm = bareKey && Sprites.meta(bareKey), wa = w && WEAPON_ART[w.id] && Parts.weapon(w.id);
       this.muzzle = null;
+      const useSkel = skel;
+      p._cr = (p._cr || 0) + ((crouch ? 1 : 0) - (p._cr || 0)) * Math.min(1, dtp * 9);   // kneel down / stand up smoothly
+      // relaxing: a few seconds without moving, shooting, aiming or swinging and the weapon sinks into a tired, relaxed carry
+      if (p.moving || p.aiming || p.swingT > 0 || run.time - (p.lastShot || -9) < 1 || p.reloadT > 0 || crouch || p._turnT > 0) p._busyT = run.time;
+      p._calm = (p._calm || 0) + ((run.time - (p._busyT ?? run.time) > 2.5 ? 1 : 0) - (p._calm || 0)) * Math.min(1, dtp * (p._calm > 0.5 ? 1.2 : 6));
+      // walk acceleration (starting / stopping) for the weapon's inertia
+      const av = dtp > 0 ? ((p._amp || 0) - (p._ampP ?? (p._amp || 0))) / dtp : 0; p._ampP = p._amp || 0;
+      p._acc = (p._acc || 0) + (av - (p._acc || 0)) * Math.min(1, dtp * 8);
+      if (useSkel && p.climb) face = p.facing;
+      const skSt = useSkel && { amp: p._amp || 0, ph: p._ph || 0, gait, t: run.time, stance: p._st || 0, w: w && dur(w) >= 0 ? w : null,
+        crouch: p.climb ? 0 : (it && it.cls !== 'melee' ? 0.32 : 1) * p._cr, downLean: p.climb || !(it && it.cls !== 'melee') ? 0 : p._cr, /* aiming down: knees soft, bent over the gun (not kneeling) */ calm: p._calm || 0, acc: (p._acc || 0) * 0.35, climb: p.climb ? p.climb.t * FH / 34 * Math.PI : null, swing: p.swingT > 0 && (!it || it.cls === 'melee') ? sw : 0,
+        mode: !w ? 'free' : ITEMS[w.id].cls === 'melee' ? 'carry' : (p.aiming || run.time - (p.lastShot || -9) < 1.2 || p.reloadT > 0 || p._crouch || Input.mouse.down || aim !== 0) ? 'aim' : 'carry',   // skeleton: low ready unless there's a reason to raise the gun (no carry art needed) aimA: it && it.cls !== 'melee' ? aimTilt(aim) + (p._dAng - aimTilt(aim)) * (p._cr || 0) : 0,   // kneeling at a hatch: muzzle down through it
+       
+        kick: it && it.cls !== 'melee' ? Math.max(0, 1 - (run.time - (p.lastShot || -9)) / 0.12) : 0 };
+      const drawPose = (face) => {
+      if (useSkel) { const mz = Skel.draw(this.ctx, base, p.x, y, face, sc, skSt); if (mz && mz.dx != null) this.muzzle = mz; return; }
       if (bm && bm.ga != null && Override.get(bareKey) && (wa || !w)) {
         const c = this.ctx, k = sc / SPR_PPU, ws = sc * (!it || it.cls === 'melee' ? 1 : 1.05);
-        const pr = legKey && Puppet.rig(base), yb = y + (pr ? Puppet.bob(pr, p.walk * 0.85 * Math.PI / 2) * k : 0);   // puppet legs lift the body: keep the gun in the hands
-        const gx = p.x + face * (bm.gx - bm.ax) * k, gy = yb + (bm.gy - bm.ay) * k;
-        const ang = !it || it.cls === 'melee' ? bm.ga : bm.ga + (realCrouch ? 0.55 : p._crouch ? 0.8 : aimTilt(aim));
-        if (legKey) Sprites.drawSplit(c, bareKey, legKey, p.x, y, face, sc, null, p.walk * 0.85, 0); else Sprites.draw(c, bareKey, p.x, y, face, sc);
+        const pr = legKey && Puppet.rig(base), yb = y + (pr ? Puppet.bob(pr, Puppet.ph(p.walk * 0.85)) * k : 0);   // puppet legs lift the body: keep the gun in the hands
+        const kick0 = it && it.cls !== 'melee' ? Math.max(0, 1 - (run.time - (p.lastShot || -9)) / 0.1) : 0;
+        const gx = p.x + face * ((bm.gx - bm.ax) * k - kick0 * 3 * sc), gy = yb + (bm.gy - bm.ay) * k;
+        const ang = (!it || it.cls === 'melee' || key.endsWith('carry') ? bm.ga : bm.ga + (realCrouch ? 0.55 : p._crouch ? 0.8 : aimTilt(aim))) - kick0 * (it && it.cls === 'pistol' ? 0.22 : 0.1);
+        // the upper body (and what it holds) is alive: sways with the stride, breathes when still, rocks back on recoil
+        const rigU = rig && !realCrouch && Puppet.cur, amp = p._amp || 0, gph = p._ph || 0;
+        const kick = it && it.cls !== 'melee' ? Math.max(0, 1 - (run.time - (p.lastShot || -9)) / 0.14) : 0;
+        const upRot = rigU ? amp * (1.4 * Math.sin(gph * 2) + (p.gait === 'run' ? 4 : 1.5)) + (1 - amp) * 0.8 * Math.sin(run.time * 2.1) - kick * (it.cls === 'pistol' ? 5 : 3.5) : 0;
+        const upDy = rigU ? (1 - amp) * 0.9 * Math.sin(run.time * 2.1 + 1.2) : 0;
+        const hipW = rigU && { x: p.x + face * (rig.hipX - Sprites.meta(base).ax) * k, y: yb + (rig.hipY - Sprites.meta(base).ay) * k };
+        if (rigU) { Puppet.cur.upRot = upRot; Puppet.cur.upDy = upDy; }
+        const legK = legKey || (rigU ? Sprites.walkKey(base, 0) : null);   // rigged: legs are drawn separately even when standing, so only the torso sways
+        if (legK) Sprites.drawSplit(c, bareKey, legK, p.x, y, face, sc, null, p.walk * 0.85, 0); else Sprites.draw(c, bareKey, p.x, y, face, sc);
+        const upT = () => { if (!hipW) return; c.translate(hipW.x, hipW.y + upDy * k); c.rotate(upRot * Math.sign(face) * Math.PI / 180); c.translate(-hipW.x, -hipW.y); };
+        c.save(); upT();
         let L = wa ? (wa.w - wa.px) * ws : 0;
         if (wa) { // bare hands: punch with the empty-hand pose, no weapon drawn
-          c.save(); c.translate(gx, gy); c.scale(face, 1); c.rotate(ang);
+          c.save(); c.translate(gx, gy); c.scale(face, 1); c.rotate(ang + (it && it.cls === 'melee' ? MELEE_ROT[w.id] || 0 : 0));
           const G = wa.ext && WPN_GRIP[w.id], img = wa.img;
           if (G && img.naturalWidth) { // painted gun: put its real grip in the hand so the stock reaches the shoulder
-            const kk = Math.min(wa.w * ws / img.naturalWidth, wa.h * ws / img.naturalHeight);
+            const kk = it && it.cls === 'melee' ? wa.w * ws * (MELEE_LEN[w.id] || 1) / img.naturalWidth : Math.min(wa.w * ws / img.naturalWidth, wa.h * ws / img.naturalHeight);   // melee: full length
             c.drawImage(img, -G[0] * kk, -G[1] * kk, img.naturalWidth * kk, img.naturalHeight * kk);
             L = (img.naturalWidth - G[0]) * kk;
           } else Art.draw(c, wa, -wa.px * ws, -wa.py * ws, wa.w * ws, wa.h * ws);
@@ -662,13 +733,43 @@ const R = {
         const hands = [[gx, gy]];
         if (it && it.cls !== 'melee' && bm.fx != null) hands.push([p.x + face * (bm.fx - bm.ax) * k, yb + (bm.fy - bm.ay) * k]);
         for (const [hx, hy] of hands) { c.save(); c.beginPath(); c.arc(hx, hy, 6.5 * sc, 0, 7); c.clip(); Sprites.draw(c, bareKey, p.x, yb, face, sc); c.restore(); }
+        c.restore();
         if (it && it.cls !== 'melee') this.muzzle = { dx: (gx - p.x) * face + Math.cos(ang) * L, dy: y - gy - Math.sin(ang) * L };
       } else if (legKey) {
         const ph = p.walk * 0.85, sprint = Math.abs(p.vx || 0) > p.spd * 1.15;
         Sprites.drawSplit(this.ctx, key, legKey, p.x, Puppet.rig(base) ? y : y + stepBob(ph, 1.4 * sc) + 0.7 * sc, face, sc, null, ph, 0);
-      } else Sprites.draw(this.ctx, key, p.x, y, face, sc);
+      } else if (key === base && rig && !p.climb) Puppet.draw(this.ctx, base, p.x, y, face, sc, 0);   // standing: breathing, weapon in hand
+      else Sprites.draw(this.ctx, key, p.x, y, face, sc);
+      };
+      // turning: never squash the picture (that reads as a flipping card) — cross-fade old side → facing the camera → new side,
+      // always drawing the incoming picture over a fully opaque one so nothing turns see-through
+      const g0 = this.ctx.globalAlpha, ease = v => v * v * (3 - 2 * v);
+      if (useSkel && p._turnT > 0 && !p.climb) {   // the bones turn on their own (head first, legs last): no front picture needed
+        const mi = Sprites.meta(base), hipOff = rig && mi ? (rig.hipX - mi.ax) * sc / SPR_PPU : 0;
+        const pivot = p.x + hipOff * (-p.facing + 2 * p.facing * ease(tt));
+        this.ctx.save(); this.ctx.translate(pivot - (p.x + p.facing * hipOff), 0);
+        skSt.turn = { tt }; drawPose(p.facing); this.ctx.restore();
+      } else if (p._turnT > 0 && !p.climb) {
+        // keep the body in one place: the side pictures are anchored at the feet but the hips sit off-centre (backpack side),
+        // so slide everything so the hips travel smoothly from the old side's spot to the new one
+        const mi = Sprites.meta(base), hipOff = rig && mi ? (rig.hipX - mi.ax) * sc / SPR_PPU : 0;
+        const pivot = p.x + hipOff * (-p.facing + 2 * p.facing * ease(tt));
+        const at = (f, fn) => { const c = this.ctx; c.save(); c.translate(pivot - (p.x + f * hipOff), 0); fn(); c.restore(); };
+        if (hasTurn) {
+          const half = tt < 0.5, a = half ? ease(Math.min(1, tt / 0.32)) : 1 - ease(Math.max(0, (tt - 0.68) / 0.32)), f = half ? -p.facing : p.facing;   // quick fades, the facing-camera frame holds in the middle
+          if (a < 0.999) { this.ctx.globalAlpha = g0 * Math.min(1, (1 - a) * 1.6); at(f, () => drawPose(f)); }   // the side view fades out under the front frame (no second head peeking out)
+          this.ctx.globalAlpha = g0 * a; Sprites.draw(this.ctx, turnKey, pivot, y, -p.facing, sc);   // the front frames glance slightly to their left: mirror them toward the new side
+          if (w && it && it.cls !== 'melee' && a > 0.05) {   // the gun swings across the chest, pointing at the camera mid-turn
+            const kk = sc / SPR_PPU, sx = -p.facing * Math.cos(Math.PI * tt), c = this.ctx;
+            c.save(); c.translate(pivot, y - (it.cls === 'pistol' ? 158 : 150) * kk); c.scale(sx * kk, kk); Puppet.drawGunAt(c, w, -8, 0, 0); c.restore();
+          }
+        } else { at(-p.facing, () => drawPose(-p.facing)); this.ctx.globalAlpha = g0 * ease(tt); at(p.facing, () => drawPose(p.facing)); }
+        this.ctx.globalAlpha = g0;
+      } else drawPose(face);
+      this.ctx.restore();
+      Puppet.cur = null;
     } else this.drawHuman(p.x, y, { rig: Art.char(G.char), scale: (G.char === 'joe' ? 1.1 : 1) * CHAR_SCALE, facing: p.facing, walk: p.walk, moving: p.moving, pack: true, weapon: w && w.id, att: w && w.att, aim, swing: sw, climb: !!p.climb });
-    if (crouch && !realCrouch) this.ctx.restore();
+    if (crouch && !realCrouch && !skel) this.ctx.restore();
     this.ctx.globalAlpha = 1;
     // hp bar above
     const ctx = this.ctx;
@@ -1105,9 +1206,6 @@ const R = {
     const used = Inv.used(p.backpack);
     Art.draw(ctx, Parts.pack(), qx + 35, qy + 10, 20, 26); ctx.textAlign = 'center';
     ctx.fillStyle = used >= p.cap ? '#ff6a5c' : '#fff'; ctx.font = '700 13px "Chakra Petch", Kanit, sans-serif'; ctx.fillText(`${used}/${p.cap}`, qx + 45, qy + 58);
-    // hints
-    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '400 12px "Chakra Petch", Kanit, sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(`${Keys.lbl('left')}/${Keys.lbl('right')} เดิน · ${Keys.lbl('up')}/${Keys.lbl('down')} ปีนบันได · ${Keys.lbl('sprint')} วิ่ง · ${Keys.lbl('sneak')} ย่อง · คลิก/${Keys.lbl('attack')} โจมตี · คลิกขวาค้าง เล็ง · ${Keys.lbl('reload')} รีโหลด · ${Keys.lbl('search')} ค้น · ${Keys.lbl('hide')} ซ่อน · ${Keys.lbl('barricade')} ค้าง บาริเคด ${p.mods.engineer ? '· ' + Keys.lbl('craft') + ' ประดิษฐ์ ' : ''}· 4-9 ปุ่มลัด · ${Keys.lbl('inv')} เป้ · ออกได้ที่จุดอพยพสีเขียว · Esc หยุด`, W - 14, qy - 10);
     if (run.pick) this.drawPickUI(run);
     this.drawCraftUI(run);
     this.drawExtractHUD(run);

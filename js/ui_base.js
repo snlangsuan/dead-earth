@@ -341,7 +341,7 @@ const UI = {
     if (!done && cur == null) btns.appendChild(U.el('div', { class: 'note warn' }, '🔒 location ที่เหลือล็อกอยู่ทั้งหมด — ต้องหาคีย์ตามที่บอกไว้ด้านบนก่อน'));
     if (!done && cur != null) btns.appendChild(U.el('button', { class: 'btn primary big', onclick: () => go(false) }, `ออกสำรวจ: ${st.locs[cur].n}`));
     if (done) btns.appendChild(U.el('div', { class: 'note good' }, '✓ พิชิตด่านนี้แล้ว'));
-    if (done) btns.appendChild(U.el('button', { class: 'btn big', onclick: () => go(true) }, 'ฟาร์มของ (location สุ่ม)'));
+    if (done) btns.appendChild(U.el('button', { class: 'btn big', onclick: () => go(true) }, 'ฟาร์มของสุ่ม'));
     for (const [kid, n] of Object.entries(G.keys || {})) if (n > 0 && KEY_ITEMS[kid]) {
       const K = KEY_ITEMS[kid];
       btns.appendChild(U.el('button', { class: 'btn big restricted', title: 'อันตรายกว่าปกติ ของดีกว่า บอสมาเร็วและอาจมีหลายตัว', onclick: () => {
@@ -405,7 +405,7 @@ const UI = {
       card.addEventListener('contextmenu', ev => { ev.preventDefault(); if (!GridUI.drag && !GridUI.splitDown) GridUI.ctxMenu(ev, it.n + (e.q > 1 ? ' ×' + e.q : ''), acts); });
       GridUI.makeDraggable(card, { from: 'ext', list: G.stash, entry: e });
       // a sewing kit / repair kit dropped on a stored shirt, bag or armor patches it; anything else goes to the stash as usual
-      if (Wear.wears(it) || it.t === 'armor') GridUI.zone(card, src => (['sewkit', 'repairkit'].includes(src.entry.id) && src.entry !== e && InvUI.kitOnItem(src, e) && (this.renderBase(), true)) || toStash(src));
+      if (Wear.wears(it) || it.t === 'armor' || it.t === 'weapon') GridUI.zone(card, src => (['sewkit', 'repairkit'].includes(src.entry.id) && src.entry !== e && InvUI.kitOnItem(src, e) && (this.renderBase(), true)) || toStash(src));
       sg.appendChild(card);
     }
     stashCol.appendChild(sg);
@@ -741,7 +741,31 @@ const UI = {
       row.appendChild(act);
       upSec.appendChild(row);
     }
-    wrap.append(bpSec, upSec);   // parts on hand: see the stash (เตรียมตัว) or the counts on each blueprint
+    // restore the durability ceiling (the max a repair can reach), a little at a time
+    const rsSec = U.el('div', { class: 'wssec' }, U.el('h4', null, 'ฟื้นฟูความทนทานสูงสุด'),
+      U.el('div', { class: 'hint' }, 'ช่างฟื้นเพดานที่ซ่อมได้คืนครั้งละ 0.5–3%'));
+    const worn = ['top', 'bottom', 'armor', 'pack'].map(sl => ({ e: Wear.get(G, sl), where: 'สวมอยู่', slot: sl })).filter(o => o.e);
+    const cands = [...weapons.map(o => ({ e: o.w, where: o.where })), ...worn, ...G.stash.filter(e => Wear.fixable(e)).map(e => ({ e, where: 'คลัง' }))].filter(o => CapRestore.cap(o.e) < 100);
+    if (!cands.length) rsSec.appendChild(U.el('div', { class: 'note' }, 'ทุกชิ้นยังซ่อมได้เต็ม 100%'));
+    for (const { e, where, slot } of cands) {
+      const it = ITEMS[e.id], { cost, money } = CapRestore.cost(e), who = CapRestore.can(e);
+      const row = U.el('div', { class: 'uprow' });
+      row.appendChild(U.el('div', { class: 'upimg', html: Art.icon(e.id) }));
+      row.appendChild(U.el('div', { class: 'upinfo' }, U.el('b', null, it.n), U.el('small', null, ` ${where} · ซ่อมได้สูงสุด ${CapRestore.cap(e)}%`)));
+      const act = U.el('div', { class: 'upact' });
+      act.appendChild(this.reqChips(cost, money));
+      if (!who) act.appendChild(U.el('small', { class: 'hint' }, CapRestore.who(e) === 'engineer' ? 'ต้องมีนักพัฒนาอาวุธที่ฐาน' : 'ต้องมีช่างตัดเสื้อที่ฐาน'));
+      else {
+        const ok = this.canPay(cost, money);
+        act.appendChild(U.el('button', { class: 'btn small' + (ok ? ' primary' : ' off'), onclick: () => {
+          if (!this.canPay(cost, money)) { toast(this.missingText(cost, money), 'warn'); return; }
+          this.pay(cost, money); const r = CapRestore.apply(e, slot);
+          Snd.hammer && Snd.hammer(); toast(`${it.n}: ซ่อมได้สูงสุด ${r.before}% → ${r.after}%`, 'good'); State.save(); this.renderBase();
+        } }, 'ฟื้นฟู +0.5–3%'));
+      }
+      row.appendChild(act); rsSec.appendChild(row);
+    }
+    wrap.append(bpSec, upSec, rsSec);   // parts on hand: see the stash (เตรียมตัว) or the counts on each blueprint
     body.appendChild(wrap);
   },
 

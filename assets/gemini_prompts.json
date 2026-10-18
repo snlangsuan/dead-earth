@@ -4,6 +4,11 @@
   "A stylized cartoon soldier with green helmet, green uniform, tactical vest and brown backpack, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
+  "char_jake_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
   "char_jake_gun",
   "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character standing and aiming an assault rifle straight forward with both hands, rifle held horizontally at shoulder height, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
   "char_jake"
@@ -31,6 +36,11 @@
  [
   "char_maya",
   "A stylized cartoon nurse with brown ponytail, white uniform with red cross, teal pants, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "char_maya_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
  ],
  [
   "char_maya_gun",
@@ -62,6 +72,11 @@
   "A stylized cartoon delivery rider with green cap, orange jacket and jeans, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
+  "char_ton_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
+ ],
+ [
   "char_ton_gun",
   "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character standing and aiming an assault rifle straight forward with both hands, rifle held horizontally at shoulder height, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
   "char_ton"
@@ -89,6 +104,11 @@
  [
   "char_chan",
   "A stylized cartoon old Thai boxer, bald, gray beard, red shirt, black pants, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "char_chan_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
  ],
  [
   "char_chan_gun",
@@ -120,6 +140,11 @@
   "A stylized cartoon Japanese swordsman with top knot hair, dark blue outfit, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
+  "char_kenji_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
   "char_kenji_gun",
   "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character standing and aiming an assault rifle straight forward with both hands, rifle held horizontally at shoulder height, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
   "char_kenji"
@@ -147,6 +172,11 @@
  [
   "char_sofia",
   "A stylized cartoon woman sniper with long blonde hair, purple jacket, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "char_sofia_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
  ],
  [
   "char_sofia_gun",
@@ -178,6 +208,11 @@
   "A stylized cartoon big bearded miner with yellow helmet and orange vest, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
  ],
  [
+  "char_joe_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
   "char_joe_gun",
   "Using the attached character as the exact reference (identical face, outfit, colors, proportions and art style), draw the character standing and aiming an assault rifle straight forward with both hands, rifle held horizontally at shoulder height, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
   "char_joe"
@@ -205,6 +240,11 @@
  [
   "char_lina",
   "A stylized cartoon woman engineer with black bob hair and goggles, teal jacket, full body, side view facing right, standing straight, arms down, empty hands, normal body proportions with a slightly large head (head about one third of total height), serious survivor look, not babyish. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "char_lina_turn",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character mid-turn, facing the viewer: body turned toward the camera in a front three-quarter view, head facing the camera, standing upright with feet slightly apart, arms relaxed down at the sides, empty hands, full body from head to shoes, same height and scale as the reference, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
  ],
  [
   "char_lina_gun",
@@ -2428,5 +2468,250 @@
  [
   "icon_pants_tac",
   "A game item icon of a pair of dark grey tactical combat trousers laid flat, front view, knee pads, many zip and flap pockets, rugged and worn, centered, isolated. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text."
+ ],
+ [
+  "char_jake_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_jake_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_jake_carry"
+ ],
+ [
+  "char_jake_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_jake_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_jake_pcarry"
+ ],
+ [
+  "char_jake_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_jake"
+ ],
+ [
+  "char_jake_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_jake_guard"
+ ],
+ [
+  "char_chan_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_chan_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_chan_carry"
+ ],
+ [
+  "char_chan_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_chan_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_chan_pcarry"
+ ],
+ [
+  "char_chan_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_chan"
+ ],
+ [
+  "char_chan_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_chan_guard"
+ ],
+ [
+  "char_joe_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_joe_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_joe_carry"
+ ],
+ [
+  "char_joe_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_joe_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_joe_pcarry"
+ ],
+ [
+  "char_joe_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_joe"
+ ],
+ [
+  "char_joe_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_joe_guard"
+ ],
+ [
+  "char_kenji_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_kenji_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_kenji_carry"
+ ],
+ [
+  "char_kenji_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_kenji_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_kenji_pcarry"
+ ],
+ [
+  "char_kenji_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_kenji"
+ ],
+ [
+  "char_kenji_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_kenji_guard"
+ ],
+ [
+  "char_lina_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_lina_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_lina_carry"
+ ],
+ [
+  "char_lina_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_lina_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_lina_pcarry"
+ ],
+ [
+  "char_lina_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_lina"
+ ],
+ [
+  "char_lina_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_lina_guard"
+ ],
+ [
+  "char_maya_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_maya_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_maya_carry"
+ ],
+ [
+  "char_maya_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_maya_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_maya_pcarry"
+ ],
+ [
+  "char_maya_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_maya"
+ ],
+ [
+  "char_maya_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_maya_guard"
+ ],
+ [
+  "char_sofia_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_sofia_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_sofia_carry"
+ ],
+ [
+  "char_sofia_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_sofia_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_sofia_pcarry"
+ ],
+ [
+  "char_sofia_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_sofia"
+ ],
+ [
+  "char_sofia_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_sofia_guard"
+ ],
+ [
+  "char_ton_carry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding an assault rifle with both hands: stock tucked against the side of the chest, muzzle angled down toward the ground in front at about 30 degrees, trigger hand on the pistol grip, support hand on the handguard, both elbows bent and relaxed close to the body, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
+ ],
+ [
+  "char_ton_carry_bare",
+  "Edit the attached image: erase ONLY the rifle and nothing else. The whole character must remain unchanged: the same head, face, helmet or hair, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are with elbows bent, both hands closed as empty fists in the same gripping positions. Fill the area where the rifle was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_ton_carry"
+ ],
+ [
+  "char_ton_pcarry",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing upright in a relaxed, professional low-ready stance holding a pistol with both hands: arms relaxed and bent, both hands together in front of the belly, pistol pointing down toward the ground in front at about 45 degrees, feet slightly apart, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
+ ],
+ [
+  "char_ton_pcarry_bare",
+  "Edit the attached image: erase ONLY the pistol and nothing else. The whole character must remain unchanged: the same head, face, body, clothes, backpack, legs, pose, size, position and framing, still facing right. Both arms stay exactly where they are, hands together in front of the belly closed as empty fists in the same gripping position. Fill the area where the pistol was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_ton_pcarry"
+ ],
+ [
+  "char_ton_guard",
+  "Using the attached character as the exact reference (identical face, hair, headwear, outfit, backpack, colors, proportions and art style), draw the SAME character standing in a ready combat guard holding a machete in the near (right) hand: weapon hand at chest height in front of the body, blade pointing up and slightly forward, the other hand raised as a guarding fist near the chest, knees slightly bent, feet apart, weight balanced, full body, side view facing right, single pose. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "char_ton"
+ ],
+ [
+  "char_ton_guard_bare",
+  "Edit the attached image: remove ONLY the machete blade and handle, nothing else. VERY IMPORTANT: both arms and both hands must stay fully visible and exactly where they are — the near arm stays bent with its hand raised in front of the chest, now closed as an EMPTY FIST (fingers curled around nothing, as if still gripping), and the other hand stays raised as a guarding fist. Do NOT remove, hide or lower any arm or hand, do NOT change the pose, body, head, clothes, backpack, legs, size, position or framing. Fill only the pixels where the blade was with the plain white background. Keep the same art style. Plain white background, no text.",
+  "char_ton_guard"
+ ],
+ [
+  "char_jake_parts",
+  "Using the attached character as the exact reference (identical face, helmet, outfit, vest, backpack, colors, proportions and art style), draw a CUT-OUT PUPPET PARTS SHEET of this character for 2D skeletal animation (like a Spine / DragonBones rig). Every body part is drawn SEPARATELY as its own isolated piece with wide empty white space around it, nothing touching or overlapping, all at the SAME scale as each other, everything in side view facing right. Draw these 11 parts in three neat rows: Row 1: (1) the head with helmet and a short neck stub, (2) the torso with the tactical vest only — no head, no arms, no legs, no backpack, with rounded shoulder and hip edges, (3) the backpack alone, (4) the hips/pelvis with belt and the top of the trousers. Row 2: (5) one upper arm from shoulder to elbow, hanging straight down, rounded at both ends, (6) one forearm with sleeve from elbow to wrist, straight down, rounded at both ends, (7) a hand closed into a fist as if gripping a handle, (8) a relaxed open hand. Row 3: (9) one thigh from hip to knee, straight down, rounded at both ends, (10) one shin with knee from knee to ankle, straight down, (11) one boot. Joint ends are rounded and slightly extended so the pieces can overlap when assembled. No labels, no numbers, no text, no shadows. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, plain white background.",
+  "char_jake"
  ]
 ]

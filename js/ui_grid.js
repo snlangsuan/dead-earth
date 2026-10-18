@@ -11,7 +11,7 @@ const GridUI = {
     const ic = WEAPON_ART[e.id] ? `<div class="gimg" style="${e.rot ? `width:${h * this.CELL - 10}px;height:${w * this.CELL - 10}px;transform:rotate(90deg)` : `width:${w * this.CELL - 10}px;height:${h * this.CELL - 10}px`}"><img src="${Parts.weapon(e.id).img.src}" draggable="false"></div>`
       : `<div class="gic" style="width:${Math.max(28, Math.min(48, big * 1.3))}px;height:${Math.max(28, Math.min(48, big * 1.3))}px">${Art.icon(e.id)}</div>`;
     return ic +
-      (w * h >= 2 ? `<div class="gnm">${it.n}${e.lvl ? ' +' + e.lvl : ''}</div>` : '') +
+      (e.lvl ? `<div class="gnm">+${e.lvl}</div>` : '') +   // no name label: hover shows it, right-click shows the details
       (qty !== '' ? `<div class="gq">${qty}</div>` : '') +
       (it.t === 'weapon' ? attMini(e) : '');
   },

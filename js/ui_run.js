@@ -200,14 +200,14 @@ const UIRun = {
     Run.panel = 'result';
     const o = this.el(); o.className = 'show'; o.innerHTML = '';
     const r = Run;
-    const title = success ? (info.stageDone ? '🏆 พิชิตด่านสำเร็จ!' : info.cleared ? '✅ เคลียร์ location สำเร็จ!' : '🏠 กลับถึงฐานอย่างปลอดภัย') :
+    const title = success ? (info.stageDone ? '🏆 พิชิตด่านสำเร็จ!' : info.cleared ? '✅ ทำภารกิจสำเร็จ!' : '🏠 กลับถึงฐานอย่างปลอดภัย') :
       reason === 'infection' ? '☣ คุณกลายเป็นซอมบี้...' : reason === 'abandon' ? '🏳 ทิ้งภารกิจ' : '💀 คุณตายแล้ว';
     const lines = [];
     if (success) {
       lines.push(`เงินที่ได้: <b class="g">+${U.fmt(r.cash)}</b>`);
       lines.push(`ของในเป้: ${info.items} รายการ ถูกย้ายไปที่ "เตรียมตัว"`);
-      if (!r.farm && !info.cleared && r.objectives.length) lines.push(`<span class="w">ยังทำเงื่อนไขไม่ครบ — location นี้ยังไม่เปลี่ยน ลองใหม่อีกครั้ง</span>`);
-      if (info.cleared && !info.stageDone) lines.push('location ถัดไปของด่านนี้ปลดล็อกแล้ว');
+      if (!r.farm && !info.cleared && r.objectives.length) lines.push(`<span class="w">ยังทำเงื่อนไขไม่ครบ — ลองใหม่อีกครั้ง</span>`);
+      if (info.cleared && !info.stageDone) lines.push('ปลดล็อกพื้นที่ถัดไปของด่านนี้แล้ว');
       if (info.stageDone) { const i = STAGES.indexOf(r.stage); lines.push(STAGES[i + 1] ? `ปลดล็อกด่านใหม่: <b>${STAGES[i + 1].n}</b>` : '<b>คุณกอบกู้โลกสำเร็จ!</b>'); }
       for (const s of info.newSurv) lines.push(`👤 ผู้รอดชีวิตมาถึงฐาน: <b>${s}</b>`);
       for (const b of (r.learned || [])) lines.push(`📘 เรียนรู้พิมพ์เขียวใหม่: <b>${b}</b> — ประกอบได้ที่โรงช่าง`);

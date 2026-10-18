@@ -5,7 +5,27 @@ const dur = w => (w && w.dur != null ? w.dur : 100);
 const durColor = d => d <= 0 ? '#ff4a3a' : d < 25 ? '#ff8a4a' : d < 55 ? '#ffd36a' : '#7fe08a';
 // every repair lowers the ceiling: 1st repair → 100%, 2nd → 80%, 3rd → 60% … at 0% it can't be repaired any more
 const durMax = w => (w && w.durMax != null ? w.durMax : 100);
-const repairCap = w => 100 - 20 * ((w && w.rep) || 0);
+const repairCap = w => Math.min(100, Math.round((100 - 20 * ((w && w.rep) || 0) + ((w && w.capFix) || 0)) * 10) / 10);   // capFix: ceiling a mechanic won back at base
+// ---- restoring the ceiling at the base workshop: needs the right specialist, costs a lot, wins back only 0.5–3% a time ----
+const CapRestore = {
+  amount() { return Math.round(U.rf(Math.random, 0.5, 3) * 10) / 10; },
+  // weapons need the weapons engineer; clothes / trousers / bags / armor need the tailor
+  who(e) { return ITEMS[e.id].t === 'weapon' ? 'engineer' : 'tailor'; },
+  can(e) { return !!(G.roles && G.roles[this.who(e)]); },
+  cap(e) { return ITEMS[e.id].t === 'weapon' ? repairCap(e) : Wear.capOf(e); },
+  cost(e) {
+    const it = ITEMS[e.id], v = it.v || 100;
+    if (it.t === 'weapon') return it.cls === 'melee' ? { cost: { scrap: 4, p_blade: 1 }, money: Math.round(250 + v * 0.18) } : { cost: { gunparts: 4, p_spring: 1 }, money: Math.round(250 + v * 0.18) };
+    return it.t === 'armor' ? { cost: { cloth: 3, scrap: 3 }, money: Math.round(200 + v * 0.3) } : { cost: { cloth: 5, sewkit: 1 }, money: Math.round(180 + v * 0.3) };
+  },
+  // raise the ceiling; slot 'pack' = the worn bag (its stand-in entry writes back to G)
+  apply(e, slot) {
+    const amt = this.amount(), before = this.cap(e);
+    if (ITEMS[e.id].t === 'weapon') { e.capFix = Math.round(((e.capFix || 0) + Math.min(amt, 100 - before)) * 10) / 10; }
+    else { e.gmax = Math.min(100, Math.round(((e.gmax ?? 100) + amt) * 10) / 10); if (slot === 'pack') G.bagMax = e.gmax; }
+    return { before, after: this.cap(e) };
+  },
+};
 function applyRepair(w, amount) { // returns the new durability, or null if it can't be repaired
   const cap = repairCap(w); if (cap <= 0) return null;
   w.rep = (w.rep || 0) + 1; w.durMax = cap; w.jammed = false;

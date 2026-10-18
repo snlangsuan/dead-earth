@@ -450,15 +450,22 @@ const Run = {
     const up = K['KeyW'] || K['ArrowUp'], down = K['KeyS'] || K['ArrowDown'];
     // movement modes: Z = sneak (silent, slow), normal walk, Shift = run (loud, uses stamina)
     const sneak = K['KeyZ'] && !p.climb;
-    const sprint = !sneak && !p.aiming && !p.overKg && (K['ShiftLeft'] || K['ShiftRight']) && (p.stam > 1 || p.adren > 0) && mx !== 0;
+    // out of breath: once stamina runs dry you can't sprint again until you've got some back (no stutter-sprinting at 0)
+    if (p.stam <= 0.5) p.winded = true; else if (p.stam >= 30) p.winded = false;
+    const sprint = !sneak && !p.aiming && !p.overKg && (K['ShiftLeft'] || K['ShiftRight']) && ((p.stam > 1 && !p.winded) || p.adren > 0) && mx !== 0;
     p.gait = sneak ? 'sneak' : sprint ? 'run' : 'walk'; p.sneak = sneak;
+    // holding Shift but can't run: say why (once in a while), so it never feels like the key is broken
+    if ((K['ShiftLeft'] || K['ShiftRight']) && mx !== 0 && !sprint && !sneak && !p.aiming && now - (p.noRunMsgT || -1e9) > 3000) {
+      const why = p.overKg ? 'หนักเกินไป วิ่งไม่ได้' : p.winded ? 'เหนื่อย — รอให้หายเหนื่อยก่อน' : '';
+      if (why) { p.noRunMsgT = now; this.popText(p.x, this.yOf(p) - 120, why, '#ffb36a'); }
+    }
     let spd = p.spd * (sneak ? 0.38 : sprint ? 1.45 : 0.7) * (p.adren > 0 ? 1.2 : 1) * (this.medJob ? 0.5 : 1) * (p.aiming ? 0.5 : 1);
     if (p.dropH) { // landing after letting go of a ladder (or hopping out at the top)
       if (p.dropH > 0) { p.dropV = (p.dropV || 0) + 1800 * dt; p.dropH = Math.max(0, p.dropH - p.dropV * dt); if (!p.dropH) { p.dropV = 0; Snd.step && Snd.step(false); if (this.time - (p.lastDrop || -9) > 0.1) { this.noise(p.x, floorY(p.f), 180); p.lastDrop = this.time; } } }
       else p.dropH = Math.min(0, p.dropH + 400 * dt);
     }
     if (p.climb) {
-      const cs = 300 / FH;
+      const cs = 100 * (p.overKg ? 0.7 : 1) / FH;   // hand over hand: ~2.4 s a floor (slower than walking), slower still when overloaded
       if (up) p.climb.t += cs * dt; else if (down) p.climb.t -= cs * dt;
       if (p.climb.t >= 1) { p.f = p.climb.lad.lo + 1; p.room = p.climb.lad.b; p.climb = null; }
       else if (p.climb.t <= 0) { p.f = p.climb.lad.lo; p.room = p.climb.lad.a; p.climb = null; }
@@ -477,17 +484,22 @@ const Run = {
       if (up) { const l = this.ladderNear(p, true); if (l) { p.x = l.x; p.vx = 0; p.climb = { lad: l, t: 0.02 }; } }
       else if (down) {
         const l = this.ladderNear(p, false);
-        // holding a gun with zombies visible below: S crouches and aims down the hatch; keep holding (0.6 s) to climb down anyway
+        // holding a gun on an upper floor: S kneels and aims down; at a hatch keep holding (0.6 s) to climb down
         const w = this.curWeapon(), gun = w && ITEMS[w.id].cls !== 'melee' && dur(w) > 0;
-        const aimHatch = l && gun && this.hatchUnder && this.hatchUnder() && this.downCands(l).length > 0;
-        p.kbDown = !!aimHatch; p.downHoldT = (p.downHoldT || 0) + dt;
-        if (l && (!aimHatch || p.downHoldT >= 0.6)) { p.kbDown = false; p.x = l.x; p.vx = 0; p.climb = { lad: l, t: 0.98 }; }
+        // with a gun: S aims down through the floor anywhere; standing at a ladder it just climbs down — unless there are
+        // zombies down there to shoot, then it aims first and climbs once you've held it a moment
+        const hole = gun && this.holeUnder && this.holeUnder();
+        const aimHatch = hole && (!l || this.downCands(l).length > 0);
+        const firing = Input.mouse.down || K['Space'] || K['KeyJ'] || this.time - (p.lastShot || -9) < 0.5;
+        p.kbDown = !!aimHatch; p.downHoldT = aimHatch && firing ? 0 : (p.downHoldT || 0) + dt;   // shooting down doesn't count toward climbing down
+        if (l && (!aimHatch || p.downHoldT >= 0.45)) { p.kbDown = false; p.x = l.x; p.vx = 0; p.climb = { lad: l, t: 0.98 }; }
       }
       // facing: mouse-held attack aims at the cursor; otherwise movement keys turn the character;
       // standing still, the cursor turns you only if it moved after your last step
       const aimMouse = (Input.mouse.down || p.aiming) && R.cam;
       const cursorFace = () => { const mw = R.screenToWorld(Input.mouse.x, Input.mouse.y); if (Math.abs(mw.x - p.x) > 6) p.facing = mw.x < p.x ? -1 : 1; };
       if (aimMouse) cursorFace();
+      else if (mx && (K['Space'] || K['KeyJ']) && this.curWeapon() && ITEMS[this.curWeapon().id].cls !== 'melee') p.keyT = now;   // firing with the keyboard: keep facing the enemy and back-pedal
       else if (mx) { p.facing = mx; p.keyT = now; }
       else if (R.cam && Input.mouse.t > (p.keyT || 0) && now - Input.mouse.t < 1500) cursorFace();
       // smooth acceleration / braking; backpedalling while aiming is slower
@@ -498,8 +510,8 @@ const Run = {
       if (Math.abs(p.vx) < 4 && !mx) p.vx = 0;
       if (!p.climb && p.vx) {
         this.moveH(p, p.vx * dt);
-        const st0 = Math.floor(p.walk * 0.425); p.walk += Math.abs(p.vx) * dt / 16;
-        if (Math.floor(p.walk * 0.425) !== st0) {
+        const st0 = Math.floor(p.walk * 0.8075); p.walk += Math.abs(p.vx) * dt / 16;
+        if (Math.floor(p.walk * 0.8075) !== st0) {
           if (p.gait !== 'sneak') Snd.step(this.map.rooms[p.room].outdoor);
           // footsteps: walking is heard ~40-60% of the time nearby, running >60% and farther, sneaking is silent
           if (p.gait === 'walk') this.noise(p.x, this.yOf(p), 210, U.rf(Math.random, 0.4, 0.6) * 0.35);
@@ -520,6 +532,7 @@ const Run = {
   playerVitals(dt) {
     const p = this.p;
     p.swingT = Math.max(0, p.swingT - dt);
+    if (p.pendingHit) { p.pendingHit.t -= dt; if (p.pendingHit.t <= 0) { const h = p.pendingHit; p.pendingHit = null; if (!p.climb && !p.hidden) this.meleeHit(h.s, h.bare); } }
     p.hurtT = Math.max(0, p.hurtT - dt);
     p.hunger -= dt * (0.2 + (p.inf > 50 ? 0.1 : 0));
     if (p.hunger <= 0) { p.hunger = 0; this.hurt(1.6 * dt, true); }
@@ -529,24 +542,30 @@ const Run = {
   },
 
   curWeapon() { return this.p.weapons[this.p.cur]; },
+  // a melee swing: wind-up → strike → recover over `dur` seconds; the hit lands when the blade actually comes through
+  // (45% of the way in, as the strike passes level), not the moment the button is pressed
+  startSwing(dur, s, bare) {
+    const p = this.p; p.swingDur = dur; p.swingT = dur;
+    p.pendingHit = { t: dur * 0.45, s, bare };
+  },
 
   attack() {
     const p = this.p, w = this.curWeapon();
     if (!w || p.atkCd > 0) {
       if (!w && p.atkCd <= 0) { // bare fists
-        p.atkCd = 0.5; p.swingT = 0.2; Snd.swing(); this.meleeHit({ dmg: 8, range: 44, kb: 40 }); }
+        p.atkCd = 0.5; Snd.swing(); this.startSwing(0.4, { dmg: 8, range: 44, kb: 40 }); }
       return;
     }
     const s = wStats(w, G.char);
     if (dur(w) <= 0) { // broken: melee falls back to fists, guns just click
-      if (s.cls === 'melee') { p.atkCd = 0.5; p.swingT = 0.2; Snd.swing(); this.meleeHit({ dmg: 8, range: 44, kb: 40 }, true); }
+      if (s.cls === 'melee') { p.atkCd = 0.5; Snd.swing(); this.startSwing(0.4, { dmg: 8, range: 44, kb: 40 }, true); }
       else { p.atkCd = 0.4; Snd.empty(); }
       this.popText(p.x, this.yOf(p) - 90, `${ITEMS[w.id].n} พัง — ต้องซ่อม`, '#ff6a5c');
       return;
     }
     if (s.cls === 'melee') {
-      p.atkCd = s.rate; p.swingT = Math.min(0.25, s.rate * 0.7); Snd.swing();
-      this.meleeHit(s);
+      p.atkCd = s.rate; Snd.swing();
+      this.startSwing(Math.min(0.55, Math.max(0.28, s.rate * 0.92)), s);
       return;
     }
     if (p.reloadT > 0) return;
@@ -1382,22 +1401,27 @@ const Run = {
     pk.dAngle = pk.dAngle == null ? pk.angle : pk.dAngle + (pk.angle - pk.dAngle) * sm;
     const dist = Math.abs(pk.angle - pk.lock.sweet);
     const maxTurn = dist <= pk.width ? 1 : U.clamp(1 - (dist - pk.width) / 55, 0, 0.92);
-    const turning = Input.mouse.down || K['Space'] || K['KeyE'];
+    // a key / button still held from before the lock opened (attacking, the E that opened it) doesn't count: let go first
+    const held = Input.mouse.down || K['Space'] || K['KeyE'];
+    if (!held) pk.armed = true;
+    const turning = held && pk.armed;
     if (turning) {
       pk.turn = Math.min(maxTurn, pk.turn + dt * 1.5);
       if (pk.turn >= 1) { this.finishPick(); return; }
-      if (pk.turn >= maxTurn - 0.005) { // jammed: the pick bends
-        pk.hp -= dt * (0.8 + pk.tier * 0.3); pk.shake = 0.08; pk.tickT -= dt;
+      if (pk.turn >= maxTurn - 0.005) { // jammed: it shakes as a warning first, then the pick starts to bend if you keep forcing it
+        pk.jamT = (pk.jamT || 0) + dt;
+        if (pk.jamT > 0.35) pk.hp -= dt * (0.8 + pk.tier * 0.3);
+        pk.shake = 0.08; pk.tickT -= dt;
         if (pk.tickT <= 0) { pk.tickT = 0.18; Snd.lockTick(false); }
         if (pk.hp <= 0) {
           Inv.remove(p.backpack, 'lockpick', 1); pk.hp = 1; pk.turn = 0; Snd.lockBreak();
           this.popText(p.x, this.yOf(p) - 120, 'กิ๊บหัก!', '#ff5a4a'); this.noise(p.x, this.yOf(p), 200);
           if (!Inv.count(p.backpack, 'lockpick')) { this.pick = null; toast('กิ๊บสะเดาะหมดแล้ว — กด F เพื่องัดแทน', 'warn'); return; }
         }
-      } else { pk.tickT -= dt; if (pk.tickT <= 0) { pk.tickT = 0.12; Snd.lockTick(true); } }
+      } else { pk.jamT = 0; pk.tickT -= dt; if (pk.tickT <= 0) { pk.tickT = 0.12; Snd.lockTick(true); } }
       pk.jam = pk.turn >= maxTurn - 0.005 ? Math.min(1, (pk.jam || 0) + dt * 6) : Math.max(0, (pk.jam || 0) - dt * 4);
       pk.close = maxTurn;
-    } else { pk.turn = Math.max(0, pk.turn - dt * 2.5); pk.jam = Math.max(0, (pk.jam || 0) - dt * 4); }
+    } else { pk.jamT = 0; pk.turn = Math.max(0, pk.turn - dt * 2.5); pk.jam = Math.max(0, (pk.jam || 0) - dt * 4); }
     pk.dTurn = pk.dTurn == null ? pk.turn : pk.dTurn + (pk.turn - pk.dTurn) * (1 - Math.exp(-dt * 20));
     if (pk.time >= pk.limit) { this.pick = null; pk.lock.sweet = null; this.popText(p.x, this.yOf(p) - 120, 'หมดเวลา! กลไกล็อกเปลี่ยนตำแหน่ง', '#ffb36a'); this.noise(p.x, this.yOf(p), 160); }
   },

@@ -21,8 +21,8 @@ const Aim = {
     const p = run.p, w = this.gun(run); if (!w) return null;
     const s = wStats(w, G.char), mw = R.screenToWorld(Input.mouse.x, Input.mouse.y);
     let best = null, bd = Infinity;
-    // cursor below your floor while standing at a hatch: aim down through it
-    const l = run.hatchUnder && run.hatchUnder();
+    // cursor below your floor (upper floors): aim down — through a hatch, or straight through the floor
+    const l = run.holeUnder && run.holeUnder();
     p.aimDown = !!l && mw.y > floorY(p.f) + 6;
     if (p.aimDown) {
       for (const z of run.downCands(l)) { const d = Math.hypot(z.x - mw.x, (run.yOf(z) - 40) - mw.y); if (d < bd) { bd = d; best = z; } }
@@ -94,7 +94,7 @@ const Aim = {
     const r = _wui.call(this, run, ...a);
     const p = run.p; if (!p || !p.aiming) return r;
     const ctx = this.ctx, k = Math.min(1, (p.aimT || 0) / Aim.STEADY), z = p.aimTgt;
-    const hl = p.aimDown && run.hatchUnder();
+    const hl = p.aimDown && run.holeUnder();
     const x0 = hl ? hl.x : p.x + p.facing * 30, y0 = hl ? floorY(hl.lo) - FH + SLAB + 4 : run.yOf(p) - 42;
     let tx, ty;
     if (z && !z.dead) { tx = z.x; ty = run.yOf(z) - z.Z.r * (z.Z.boss ? 4 : 3); }
