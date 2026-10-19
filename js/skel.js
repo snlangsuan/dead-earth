@@ -56,8 +56,8 @@ const Skel = {
   // A = hip swing (deg), K = knee fold mid-swing, S = share of the cycle the foot is on the floor, C = knee bend (sneaking),
   // slip = < 1 lets the stride run a little behind the ground speed (very short legs would otherwise step frantically)
   GAIT: {
-    walk:  { A: 40, K: 70, S: 0.58, C: 0,  slip: 0.65 },
-    run:   { A: 52, K: 118, S: 0.36, C: 12, slip: 0.68 },
+    walk:  { A: 46, K: 62, S: 0.6,  C: 4,  slip: 0.82 },
+    run:   { A: 56, K: 112, S: 0.36, C: 14, slip: 0.8 },
     sneak: { A: 24, K: 52, S: 0.62, C: 24, slip: 0.85 },
   },
   gp(gait) { return this.GAIT[gait] || this.GAIT.walk; },
@@ -179,6 +179,19 @@ const Skel = {
     const fwd = Math.max(0, -Math.cos(p - 0.5));   // forward swing, lagged: the forearm catches up late
     const low = -(14 + (g.elbow || 30) * 0.9 * fwd * amp + run * 70) * Math.PI / 180;   // running: elbows locked near 90°, arms pump
     return { up, low, wrist: (-0.12 - 0.18 * fwd * amp) };
+  },
+  // muzzle flash on the barrel tip (gun space, x along the barrel): a glow and a star of fire, gone in ~70 ms
+  flash(ctx, L, f) {
+    const s = (0.85 + 0.3 * f) * 2.2, ga = ctx.globalAlpha;
+    const glow = (n, a, c) => { ctx.globalAlpha = ga * a * f; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(L + 12 * s, 0, n * s, 0, 7); ctx.fill(); };
+    const poly = (pts, c) => { ctx.fillStyle = c; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fill(); };
+    ctx.save();
+    glow(30, 0.16, '#ffcf70'); glow(17, 0.3, '#ffd88a'); glow(9, 0.5, '#fff3c4');
+    ctx.globalAlpha = ga * Math.min(1, f * 1.8); ctx.translate(L, 0); ctx.scale(s, s);
+    // narrow at the muzzle, opening out forward, with two side prongs (the gas escaping)
+    poly([[0, -2.5], [9, -5], [14, -13], [17, -5], [34, 0], [17, 5], [14, 13], [9, 5], [0, 2.5]], '#ffad2e');
+    poly([[0, -1.6], [11, -3.6], [22, 0], [11, 3.6], [0, 1.6]], '#fff4c2');
+    ctx.restore();
   },
   // bare-hand punch: jab with the near fist, the far fist stays up guarding the chin
   punch(m, sw) {
@@ -309,6 +322,7 @@ const Skel = {
         if (G && img && img.naturalWidth) { const kk = Math.min(wa.w * SPR_PPU * 1.05 / img.naturalWidth, wa.h * SPR_PPU * 1.05 / img.naturalHeight); L = (img.naturalWidth - G[0]) * kk; }
         ctx.rotate(ang); const P = ctx.getTransform().transformPoint(new DOMPoint(L, 0)), Wp = B.inverse().transformPoint(P);
         muzzle = { dx: (Wp.x - x) * face, dy: y - Wp.y };
+        if (st.flash > 0) this.flash(ctx, L, st.flash);
       }
       ctx.restore();
       // support hand on a gun's handguard / a two-handed grip: in front of the chest. A one-handed blade's guard arm stays

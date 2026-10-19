@@ -47,6 +47,7 @@ const ROLES = {
 const GENERIC_NAMES = ['สมชาย', 'นภา', 'ก้อง', 'ปรีชา', 'แพรว', 'บุญมี', 'อร', 'ธนา', 'เมย์', 'ภูมิ', 'ดาว', 'เอก', 'จิ๊บ', 'ต่อ', 'ใบเตย', 'ชาลี', 'อันนา', 'มาร์โค', 'ยูกิ', 'ฮัสซัน', 'โอลิเวีย', 'ราจ', 'คาร์ลอส', 'อามีนา'];
 
 // ---------- Zombies ----------
+const ACID_G = 520;   // gravity on spat acid (px/s²)
 const ZOMBIES = {
   walker:  { n: 'ซอมบี้', hp: 55, spd: 58, dmg: 10, atk: 1.0, inf: 0.18, r: 14, col: '#6f8f5c', sight: 330, score: 1 },
   runner:  { n: 'ซอมบี้วิ่ง', hp: 36, spd: 120, dmg: 6, atk: 0.6, inf: 0.1, r: 12, col: '#93a35a', sight: 380, score: 1 },

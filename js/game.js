@@ -12,7 +12,7 @@ const Input = {
     });
     window.addEventListener('keyup', e => { const c = Keys.tr(e.code); if (c != null) Input.keys[c] = false; });
     window.addEventListener('blur', () => { Input.keys = {}; Input.mouse.down = false; });
-    canvas.addEventListener('mousemove', e => { const b = canvas.getBoundingClientRect(); Input.mouse.x = e.clientX - b.left; Input.mouse.y = e.clientY - b.top; Input.mouse.moved = true; Input.mouse.t = performance.now(); });
+    canvas.addEventListener('mousemove', e => { const b = canvas.getBoundingClientRect(), nx = e.clientX - b.left, ny = e.clientY - b.top; Input.mouse.dist = (Input.mouse.dist || 0) + Math.hypot(nx - Input.mouse.x, ny - Input.mouse.y); Input.mouse.x = nx; Input.mouse.y = ny; Input.mouse.moved = true; Input.mouse.t = performance.now(); });
     canvas.addEventListener('mousedown', e => { if (e.button === 0) Input.mouse.down = true; });
     window.addEventListener('mouseup', e => { if (e.button === 0) Input.mouse.down = false; });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -116,7 +116,7 @@ const Run = {
     };
     const firstW = this.p.weapons.findIndex(w => w);
     this.p.cur = firstW >= 0 ? firstW : 0;
-    this.zombies = []; this.bullets = []; this.nades = []; this.acid = []; this.parts = []; this.texts = [];
+    this.zombies = []; this.bullets = []; this.nades = []; this.acid = []; this.acidPools = []; this.parts = []; this.texts = [];
     this.cash = 0; this.kills = 0; this.dangerPts = Days.worldDanger() * Math.min(1, this.lv / 8); this.level = Math.min(this.maxLevel, 1 + Math.floor(this.dangerPts / this.dangerStep)); this.trickleT = 14;
     this.waveT = this.firstWave; this.waveN = 0; this.waveQ = 0; this.waveSpawnT = 0; this.waveActive = 0; this.waveWarned = false; this.chasers = 0;
     this.boss = null; this.bossSpawned = false; this.bossKilled = false;
@@ -230,7 +230,7 @@ const Run = {
       type, Z, x, f: room.f, room: room.id, rad: Z.r, climb: null,
       hp: Z.hp * hm, maxHp: Z.hp * hm, spd: Z.spd * U.rf(Math.random, 0.85, 1.15), dmg: Z.dmg * (1 + this.dc * 0.04 + (this.level - 1) * 0.04), dmgK: 1 + this.dc * 0.04 + (this.level - 1) * 0.04,
       state: alerted ? 'chase' : 'idle', facing: Math.random() < 0.5 ? -1 : 1, atkCd: 0, wanderX: x, wanderT: 0,
-      ph: Math.random() * 10, hitT: 0, look: Math.floor(Math.random() * 5), depth: U.rf(Math.random, -6, 6), spitCd: 2, chargeT: 0, chargeCd: 5,
+      ph: Math.random() * 10, hitT: 0, look: Math.floor(Math.random() * 5), depth: U.rf(Math.random, -6, 6), spitCd: U.rf(Math.random, 0.8, 1.6), spitWind: 0, spitPost: 0, chargeT: 0, chargeCd: 5,
       skin: U.pick(Math.random, ['#7a9a66', '#6f8f5c', '#8aa36f', '#6a8a6a', '#94a87a']),
       shirt: U.pick(Math.random, ['#5a4a3a', '#3d4f63', '#6b2f2f', '#4f5a3a', '#6a6a6a', '#2f3f4f', '#7a6a50']),
     };
@@ -459,7 +459,7 @@ const Run = {
       const why = p.overKg ? 'หนักเกินไป วิ่งไม่ได้' : p.winded ? 'เหนื่อย — รอให้หายเหนื่อยก่อน' : '';
       if (why) { p.noRunMsgT = now; this.popText(p.x, this.yOf(p) - 120, why, '#ffb36a'); }
     }
-    let spd = p.spd * (sneak ? 0.38 : sprint ? 1.45 : 0.7) * (p.adren > 0 ? 1.2 : 1) * (this.medJob ? 0.5 : 1) * (p.aiming ? 0.5 : 1);
+    let spd = p.spd * (sneak ? 0.38 : sprint ? 1.45 : 0.62) * (p.adren > 0 ? 1.2 : 1) * (this.medJob ? 0.5 : 1) * (p.aiming ? 0.5 : 1);
     if (p.dropH) { // landing after letting go of a ladder (or hopping out at the top)
       if (p.dropH > 0) { p.dropV = (p.dropV || 0) + 1800 * dt; p.dropH = Math.max(0, p.dropH - p.dropV * dt); if (!p.dropH) { p.dropV = 0; Snd.step && Snd.step(false); if (this.time - (p.lastDrop || -9) > 0.1) { this.noise(p.x, floorY(p.f), 180); p.lastDrop = this.time; } } }
       else p.dropH = Math.min(0, p.dropH + 400 * dt);
@@ -496,12 +496,14 @@ const Run = {
       }
       // facing: mouse-held attack aims at the cursor; otherwise movement keys turn the character;
       // standing still, the cursor turns you only if it moved after your last step
-      const aimMouse = (Input.mouse.down || p.aiming) && R.cam;
+      // (only guns follow the cursor; a melee weapon swings where you walk, and a jittery mouse never undoes a key turn)
+      const cw = this.curWeapon(), gunOut = !!(cw && ITEMS[cw.id].cls !== 'melee');
+      const aimMouse = (p.aiming || (Input.mouse.down && gunOut)) && R.cam;
       const cursorFace = () => { const mw = R.screenToWorld(Input.mouse.x, Input.mouse.y); if (Math.abs(mw.x - p.x) > 6) p.facing = mw.x < p.x ? -1 : 1; };
       if (aimMouse) cursorFace();
-      else if (mx && (K['Space'] || K['KeyJ']) && this.curWeapon() && ITEMS[this.curWeapon().id].cls !== 'melee') p.keyT = now;   // firing with the keyboard: keep facing the enemy and back-pedal
-      else if (mx) { p.facing = mx; p.keyT = now; }
-      else if (R.cam && Input.mouse.t > (p.keyT || 0) && now - Input.mouse.t < 1500) cursorFace();
+      else if (mx && (K['Space'] || K['KeyJ']) && gunOut) { p.keyT = now; Input.mouse.dist = 0; }   // firing with the keyboard: keep facing the enemy and back-pedal
+      else if (mx) { p.facing = mx; p.keyT = now; Input.mouse.dist = 0; }
+      else if (gunOut && R.cam && Input.mouse.t > (p.keyT || 0) + 250 && (Input.mouse.dist || 0) > 80 && now - Input.mouse.t < 1500) cursorFace();
       // smooth acceleration / braking; backpedalling while aiming is slower
       const back = mx && mx !== p.facing ? 0.72 : 1;
       const target = p.climb ? 0 : mx * spd * back * (this.barrNear(p) ? 0.45 : 1);
@@ -551,6 +553,7 @@ const Run = {
 
   attack() {
     const p = this.p, w = this.curWeapon();
+    if (p.climb) return;   // both hands are on the ladder (no weapon is drawn there either)
     if (!w || p.atkCd > 0) {
       if (!w && p.atkCd <= 0) { // bare fists
         p.atkCd = 0.5; Snd.swing(); this.startSwing(0.4, { dmg: 8, range: 44, kb: 40 }); }
@@ -755,6 +758,7 @@ const Run = {
     this.blood(z.x, zy - 40, 14);
     const rm = this.map.rooms[z.room];
     rm.blood.push({ x: z.x, y: 0.98, s: U.rf(Math.random, 0.8, 1.5), wall: false });
+    if (rm.blood.length > 40) { const i = rm.blood.findIndex(b => !b.wall); if (i >= 0) rm.blood.splice(i, 1); }   // oldest floor stain fades
     if (z.Z.boss) {
       const alive = (this.bosses || []).filter(b => !b.dead);
       if (!alive.length) this.bossKilled = true; else this.boss = alive[0];
@@ -884,6 +888,7 @@ const Run = {
     if (z.alertT > 0) { z.alertT -= dt; z.facing = Math.sign(p.x - z.x) || z.facing; return; }
     z.run = Math.min(1, (z.run ?? 1) + dt * 1.4);
     if (!z.Z.boss || z.chargeT <= 0) spd *= 0.35 + 0.65 * z.run;
+    if (z.spitPost > 0) z.spitPost -= dt;
     const pnav = this.navRoom(p);
     const dxp = p.x - z.x, dyp = py - zy;
     // attack
@@ -911,11 +916,24 @@ const Run = {
       }
       return;
     }
-    // spitter
-    if (z.Z.ranged && z.f === p.f && !p.climb && Math.abs(dxp) < 420 && Math.abs(dxp) > 80 && this.clearLine(z.f, z.x, p.x)) {
-      z.spitCd -= dt; z.facing = Math.sign(dxp);
-      if (z.spitCd <= 0) { z.spitCd = 2.6; Snd.spit(z.x, z.f); this.acid.push({ x: z.x + z.facing * 20, y: zy - 55, vx: z.facing * 360, vy: -60, f: z.f, room: z.room, dmg: (z.Z.acid || z.Z.dmg) * (z.dmgK || 1), t: 2 }); }
-      if (Math.abs(dxp) < 260) return;
+    // spitter: ranged, but only at a target on its own floor with nothing solid in between (no shooting through
+    // floors, ceilings, closed doors or barricades). It keeps its distance, winds up, then lobs acid at where you are.
+    if (z.Z.ranged) {
+      const sees = z.f === p.f && !p.climb && !p.hidden && Math.abs(dxp) < 440 && this.clearLine(z.f, z.x, p.x) && !this.barrBetween(z.f, z.x, p.x);
+      if (z.spitWind > 0) {                           // mid wind-up: commit, or cancel if the target left the floor
+        z.facing = Math.sign(dxp) || z.facing;
+        if (!sees) { z.spitWind = 0; z.spitCd = 0.8; }
+        else if ((z.spitWind -= dt) <= 0) { z.spitWind = 0; z.spitPost = 0.7; z.spitCd = U.rf(Math.random, 2.2, 3.0); this.spit(z, p, py); }
+        return;
+      }
+      if (z.spitPost > 0 && Math.abs(dxp) > z.rad + 30) return;   // follow-through: stands spent for a moment
+      if (sees) {
+        z.spitCd -= dt; z.facing = Math.sign(dxp) || z.facing;
+        if (z.spitCd <= 0 && Math.abs(dxp) > 70) { z.spitWind = 0.5; return; }
+        const ad = Math.abs(dxp);
+        if (ad < 170) { const before = z.x; this.moveH(z, -z.facing * spd * 0.6 * dt); z.facing = Math.sign(dxp) || z.facing; if (Math.abs(z.x - before) > 0.01) return; }  // back off; if cornered, fight
+        else if (ad < 360) return;                     // good range: hold and keep spitting
+      }
     }
     if (z.room === pnav && !p.climb) {
       z.facing = Math.sign(dxp) || z.facing;
@@ -1000,6 +1018,15 @@ const Run = {
     this.shake = 8;
   },
 
+  // aimed lob from a spitter's mouth at the player's chest (a moving target can step out of the way)
+  spit(z, p, py) {
+    const zy = this.yOf(z), m = window.SPRITE_META && SPRITE_META.zombie_spitter_spit_1, k = typeof SPR_PPU !== 'undefined' ? CHAR_SCALE / SPR_PPU : 0;
+    // launch from the mouth as drawn in the spit frame
+    const sx = z.x + z.facing * (m && k ? (m.mx - m.ax) * k : 20), sy = zy + z.depth * 0.3 + (m && k ? (m.my - m.ay) * k : -58), tx = p.x + (p.vx || 0) * 0.15, ty = py - 52;
+    const T = U.clamp(Math.abs(tx - sx) / 380, 0.35, 0.95), g = ACID_G;
+    Snd.spit(z.x, z.f);
+    this.acid.push({ x: sx, y: sy, vx: (tx - sx) / T, vy: (ty - sy - 0.5 * g * T * T) / T, f: z.f, room: z.room, dmg: (z.Z.acid || z.Z.dmg) * (z.dmgK || 1), t: 2.5 });
+  },
   // ---------- projectiles ----------
   updateProjectiles(dt) {
     const map = this.map;
@@ -1048,16 +1075,25 @@ const Run = {
     this.nades = this.nades.filter(n => !n.dead);
     const p = this.p, py = this.yOf(p);
     for (const a of this.acid) {
-      a.t -= dt; a.vy += 120 * dt;
+      if (a.pool) {                                   // splash left on the floor: burns whoever stands in it
+        a.t -= dt; if (a.t <= 0) { a.dead = true; continue; }
+        if (!p.hidden && !p.climb && p.f === a.f && Math.abs(p.x - a.x) < 22) { a.tick = (a.tick || 0) - dt; if (a.tick <= 0) { a.tick = 0.5; this.hurt(a.dmg * 0.18, true); } }
+        continue;
+      }
+      a.t -= dt; a.vy += ACID_G * dt;
       const nx = a.x + a.vx * dt;
-      if (crossWall(a, nx)) { a.dead = true; continue; }
+      if (crossWall(a, nx)) { a.dead = true; this.blood(a.x, a.y, 5, '#9dff3c'); continue; }
       a.x = nx; a.y += a.vy * dt;
-      if (a.y > floorY(a.f) - 4 || a.t <= 0) { a.dead = true; this.blood(a.x, a.y, 5, '#9dff3c'); continue; }
-      if (!p.hidden && Math.abs(a.x - p.x) < 16 && a.y > py - 80 && a.y < py) {
-        a.dead = true; this.hurt(a.dmg); this.blood(a.x, a.y, 6, '#9dff3c');
+      const fy = floorY(a.f);
+      if (a.y < fy - FH + SLAB + 4) { a.y = fy - FH + SLAB + 4; a.vy = Math.abs(a.vy) * 0.3; }   // never through the ceiling
+      if (a.y > fy - 4 || a.t <= 0) { a.dead = true; this.blood(a.x, fy - 4, 5, '#9dff3c'); this.acidPools.push({ pool: true, x: a.x, f: a.f, t: 3.5, max: 3.5, dmg: a.dmg }); continue; }
+      // hits only on the same floor: someone on a ladder or another storey is out of reach
+      if (!p.hidden && !p.climb && p.f === a.f && Math.abs(a.x - p.x) < 16 && a.y > py - 82 && a.y < py) {
+        a.dead = true; this.hurt(a.dmg); this.blood(a.x, a.y, 6, '#9dff3c'); this.popText(p.x, py - 110, 'กรด!', '#b6ff5c');
         if (Math.random() < 0.25 * (p.mods.infRes ?? 1)) p.inf = Math.min(100, p.inf + 8);
       }
     }
+    if (this.acidPools.length) { this.acid.push(...this.acidPools); this.acidPools.length = 0; }
     this.acid = this.acid.filter(a => !a.dead);
   },
   spark(x, y) { for (let i = 0; i < 5; i++) this.parts.push({ x, y, vx: U.rf(Math.random, -150, 150), vy: U.rf(Math.random, -150, 50), t: 0.25, c: '#ffd76a', s: 2, g: 300 }); },

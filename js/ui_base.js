@@ -129,6 +129,12 @@ const UI = {
       b.onclick = () => { v[key] = !v[key]; Settings.save(); const on = inv ? !v[key] : v[key]; b.className = 'tgl' + (on ? ' on' : ''); b.textContent = on ? 'เปิด' : 'ปิด'; };
       return U.el('div', { class: 'setrow' }, U.el('span', null, label), U.el('i'), b);
     };
+    // GPU renderer switch (WebGL needs the game served over http(s), not opened as a file)
+    const gpuRow = () => {
+      if (!window.Gfx || !Gfx.ok) return U.el('div', { class: 'setrow' }, U.el('span', null, 'เรนเดอร์ด้วยการ์ดจอ (GPU)'), U.el('i'), U.el('small', { class: 'dim' }, window.Gfx && Gfx.why === 'file' ? 'ใช้ไม่ได้เมื่อเปิดเป็นไฟล์' : 'เครื่องนี้ไม่รองรับ'));
+      if (v.gpu === undefined) v.gpu = true;
+      const r = toggle('gpu', 'เรนเดอร์ด้วยการ์ดจอ (GPU)'); r.querySelector('button').addEventListener('click', () => Gfx.setOn(v.gpu)); return r;
+    };
     const close = () => { Keys.capture = null; o.className = ''; o.innerHTML = ''; if (onClose) onClose(); };
     // key bindings: click a key, press the new one (Esc = cancel); taking another action's key swaps them
     const keyGrid = U.el('div', { class: 'keygrid' });
@@ -151,7 +157,7 @@ const UI = {
     // tabs: sound / display / controls
     const TABS = [
       ['snd', 'เสียง', () => [toggle('mute', 'เสียงทั้งหมด', true), slider('master', 'ระดับเสียงหลัก'), slider('music', 'เพลงประกอบ'), slider('sfx', 'เสียงเอฟเฟกต์')]],
-      ['gfx', 'การแสดงผล', () => [toggle('shake', 'หน้าจอสั่นเมื่อยิง/ระเบิด'), toggle('dmgNums', 'แสดงตัวเลขดาเมจ')]],
+      ['gfx', 'การแสดงผล', () => [toggle('shake', 'หน้าจอสั่นเมื่อยิง/ระเบิด'), toggle('dmgNums', 'แสดงตัวเลขดาเมจ'), gpuRow()]],
       ['keys', 'ปุ่มควบคุม', () => [U.el('div', { class: 'keyhead' }, U.el('span', { class: 'hint' }, 'คลิกปุ่มแล้วกดปุ่มใหม่ · Esc ยกเลิก'), U.el('button', { class: 'btn small ghost', onclick: () => { Keys.reset(); drawKeys(); } }, 'ค่าเริ่มต้น')), keyGrid]],
     ];
     if (!TABS.some(t => t[0] === this.setTab)) this.setTab = 'snd';

@@ -12,7 +12,7 @@
 const Puppet = {
   RATE: 1.9, TURN: 0.26,
   GAIT: {
-    walk:  { hip: 26, knee: 52, arm: 26, elbow: 30, lean: 3,  sway: 1.6, crouch: 0,  rate: 1.9 },
+    walk:  { hip: 26, knee: 52, arm: 34, elbow: 38, lean: 5,  sway: 1.6, crouch: 0,  rate: 1.9 },
     run:   { hip: 34, knee: 78, arm: 40, elbow: 55, lean: 9,  sway: 2.2, crouch: 6,  rate: 1.55 },
     sneak: { hip: 17, knee: 40, arm: 10, elbow: 40, lean: 7,  sway: 0.8, crouch: 22, rate: 2.5 },
   },

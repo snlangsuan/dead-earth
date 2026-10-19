@@ -2713,5 +2713,113 @@
   "char_jake_parts",
   "Using the attached character as the exact reference (identical face, helmet, outfit, vest, backpack, colors, proportions and art style), draw a CUT-OUT PUPPET PARTS SHEET of this character for 2D skeletal animation (like a Spine / DragonBones rig). Every body part is drawn SEPARATELY as its own isolated piece with wide empty white space around it, nothing touching or overlapping, all at the SAME scale as each other, everything in side view facing right. Draw these 11 parts in three neat rows: Row 1: (1) the head with helmet and a short neck stub, (2) the torso with the tactical vest only — no head, no arms, no legs, no backpack, with rounded shoulder and hip edges, (3) the backpack alone, (4) the hips/pelvis with belt and the top of the trousers. Row 2: (5) one upper arm from shoulder to elbow, hanging straight down, rounded at both ends, (6) one forearm with sleeve from elbow to wrist, straight down, rounded at both ends, (7) a hand closed into a fist as if gripping a handle, (8) a relaxed open hand. Row 3: (9) one thigh from hip to knee, straight down, rounded at both ends, (10) one shin with knee from knee to ankle, straight down, (11) one boot. Joint ends are rounded and slightly extended so the pieces can overlap when assembled. No labels, no numbers, no text, no shadows. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, plain white background.",
   "char_jake"
+ ],
+ [
+  "zombie_spitter_spit0",
+  "Image 1 is the character reference. Image 2 is a stick-figure POSE GUIDE (the small dot and the wedge on the head show where the face points). Redraw the zombie from image 1 — identical swollen spotted head, face, torn coat, colors, proportions and art style — in EXACTLY the body pose of the stick figure in image 2. The ORANGE leg and ORANGE arm are the NEAR side (drawn in front); the BLUE leg and BLUE arm are the FAR side (drawn behind the body, slightly darker). Copy the angle of the spine, neck, every thigh, shin, upper arm and forearm precisely; both feet stay flat on the ground exactly where the stick figure's feet are. This is one frame of a natural, weighty spitting motion, so the whole body takes part in it: GATHERING THE ACID (anticipation). Weight rocked back onto the rear leg, chest pushed out and puffed up, torso leaning slightly backward, head thrown up and back with the chin raised, mouth clamped shut with the cheeks bulging, eyes squeezed half shut from the strain. The throat and neck are visibly swollen like a bulging sac, the stretched skin glowing a sickly translucent acid-green from inside, a thin line of green ooze leaking from the corner of the lips. Elbows pulled back behind the body, clawed fingers tense and spread. IMPORTANT: exactly ONE creature with two legs and two arms — the BLUE limbs are its own far arm and leg, never a second figure. Do not use any orange or blue colors. Full body, side view facing right, single figure, the same size and scale as image 1, plain white background, do NOT draw the stick figure, its colored lines, the dot or the wedge, no text. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood.",
+  "zombie_spitter",
+  "poses/spit_0.png"
+ ],
+ [
+  "zombie_spitter_spit1",
+  "Image 1 is the character reference. Image 2 is a stick-figure POSE GUIDE (the small dot and the wedge on the head show where the face points). Redraw the zombie from image 1 — identical swollen spotted head, face, torn coat, colors, proportions and art style — in EXACTLY the body pose of the stick figure in image 2. The ORANGE leg and ORANGE arm are the NEAR side (drawn in front); the BLUE leg and BLUE arm are the FAR side (drawn behind the body, slightly darker). Copy the angle of the spine, neck, every thigh, shin, upper arm and forearm precisely; both feet stay flat on the ground exactly where the stick figure's feet are. This is one frame of a natural, weighty spitting motion, so the whole body takes part in it: THE SPIT (release). The weight has thrown forward onto the bent front leg, rear leg pushed straight, torso snapped forward, neck stretched out, head jutting forward with the jaw dropped wide open. A thick, ropey stream of glowing acid-green bile blasts out of the mouth straight ahead in a short forceful burst that breaks into a few droplets, extending only about one head-length in front of the face. The throat sac is now deflated and wrinkled, cheeks hollow, eyes bulging wide, a few green flecks spattered around the mouth. Both arms flung back behind the body by the recoil, fingers splayed. IMPORTANT: exactly ONE creature with two legs and two arms — the BLUE limbs are its own far arm and leg, never a second figure. Do not use any orange or blue colors. Full body, side view facing right, single figure, the same size and scale as image 1, plain white background, do NOT draw the stick figure, its colored lines, the dot or the wedge, no text. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood.",
+  "zombie_spitter",
+  "poses/spit_1.png"
+ ],
+ [
+  "zombie_spitter_spit2",
+  "Image 1 is the character reference. Image 2 is a stick-figure POSE GUIDE (the small dot and the wedge on the head show where the face points). Redraw the zombie from image 1 — identical swollen spotted head, face, torn coat, colors, proportions and art style — in EXACTLY the body pose of the stick figure in image 2. The ORANGE leg and ORANGE arm are the NEAR side (drawn in front); the BLUE leg and BLUE arm are the FAR side (drawn behind the body, slightly darker). Copy the angle of the spine, neck, every thigh, shin, upper arm and forearm precisely; both feet stay flat on the ground exactly where the stick figure's feet are. This is one frame of a natural, weighty spitting motion, so the whole body takes part in it: RECOVERY (follow-through). Slumped forward and spent, knees soft, shoulders drooping, head hanging low, mouth slack and open with long strings of green drool dripping toward the floor, the throat loose and empty, arms dangling limply in front of the body, the whole posture heavy and exhausted, about to straighten up again. No acid stream in this frame. IMPORTANT: exactly ONE creature with two legs and two arms — the BLUE limbs are its own far arm and leg, never a second figure. Do not use any orange or blue colors. Full body, side view facing right, single figure, the same size and scale as image 1, plain white background, do NOT draw the stick figure, its colored lines, the dot or the wedge, no text. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood.",
+  "zombie_spitter",
+  "poses/spit_2.png"
+ ],
+ [
+  "zombie_walker0_body",
+  "Edit the attached image: erase BOTH legs completely (everything below the waist / bottom of the shirt or torso) and erase BOTH arms completely (from the shoulders down, including the hands). Keep the head, face, neck, torso, clothing and any spikes or growths on the back exactly as they are: same hunched pose, same size, same position and framing, facing right. Where the arms were, continue the side of the torso, shoulders and torn clothing naturally so the torso is complete, with rounded shoulders. Keep the same art style. Plain white background, no text.",
+  "zombie_walker0"
+ ],
+ [
+  "zombie_walker0_arm",
+  "Using the attached zombie as the exact reference (identical skin color, wounds, torn sleeve, proportions and art style), draw ONLY ONE arm of this zombie as a separate sprite part for animation: from the shoulder down to the clawed hand, hanging perfectly straight down and limp, fingers slightly curled like claws, side view, the same thickness and length as the zombie's arm, no body, no second arm. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_walker0"
+ ],
+ [
+  "zombie_walker0_leg",
+  "Using the attached zombie as the exact reference (identical skin color, torn trousers or bare legs, feet, proportions and art style), draw ONLY ONE leg of this zombie as a separate sprite part for animation: from the hip down to and including the bare foot or shoe, perfectly straight and vertical (not bent), side view with the toes pointing right, the same thickness and length as the zombie's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_walker0"
+ ],
+ [
+  "zombie_walker1_body",
+  "Edit the attached image: erase BOTH legs completely (everything below the waist / bottom of the shirt or torso) and erase BOTH arms completely (from the shoulders down, including the hands). Keep the head, face, neck, torso, clothing and any spikes or growths on the back exactly as they are: same hunched pose, same size, same position and framing, facing right. Where the arms were, continue the side of the torso, shoulders and torn clothing naturally so the torso is complete, with rounded shoulders. Keep the same art style. Plain white background, no text.",
+  "zombie_walker1"
+ ],
+ [
+  "zombie_walker1_arm",
+  "Using the attached zombie as the exact reference (identical skin color, wounds, torn sleeve, proportions and art style), draw ONLY ONE arm of this zombie as a separate sprite part for animation: from the shoulder down to the clawed hand, hanging perfectly straight down and limp, fingers slightly curled like claws, side view, the same thickness and length as the zombie's arm, no body, no second arm. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_walker1"
+ ],
+ [
+  "zombie_walker1_leg",
+  "Using the attached zombie as the exact reference (identical skin color, torn trousers or bare legs, feet, proportions and art style), draw ONLY ONE leg of this zombie as a separate sprite part for animation: from the hip down to and including the bare foot or shoe, perfectly straight and vertical (not bent), side view with the toes pointing right, the same thickness and length as the zombie's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_walker1"
+ ],
+ [
+  "zombie_runner_body",
+  "Edit the attached image: erase BOTH legs completely (everything below the waist / bottom of the shirt or torso) and erase BOTH arms completely (from the shoulders down, including the hands). Keep the head, face, neck, torso, clothing and any spikes or growths on the back exactly as they are: same hunched pose, same size, same position and framing, facing right. Where the arms were, continue the side of the torso, shoulders and torn clothing naturally so the torso is complete, with rounded shoulders. Keep the same art style. Plain white background, no text.",
+  "zombie_runner"
+ ],
+ [
+  "zombie_runner_arm",
+  "Using the attached zombie as the exact reference (identical skin color, wounds, torn sleeve, proportions and art style), draw ONLY ONE arm of this zombie as a separate sprite part for animation: from the shoulder down to the clawed hand, hanging perfectly straight down and limp, fingers slightly curled like claws, side view, the same thickness and length as the zombie's arm, no body, no second arm. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_runner"
+ ],
+ [
+  "zombie_runner_leg",
+  "Using the attached zombie as the exact reference (identical skin color, torn trousers or bare legs, feet, proportions and art style), draw ONLY ONE leg of this zombie as a separate sprite part for animation: from the hip down to and including the bare foot or shoe, perfectly straight and vertical (not bent), side view with the toes pointing right, the same thickness and length as the zombie's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_runner"
+ ],
+ [
+  "zombie_brute_body",
+  "Edit the attached image: erase BOTH legs completely (everything below the waist / bottom of the shirt or torso) and erase BOTH arms completely (from the shoulders down, including the hands). Keep the head, face, neck, torso, clothing and any spikes or growths on the back exactly as they are: same hunched pose, same size, same position and framing, facing right. Where the arms were, continue the side of the torso, shoulders and torn clothing naturally so the torso is complete, with rounded shoulders. Keep the same art style. Plain white background, no text.",
+  "zombie_brute"
+ ],
+ [
+  "zombie_brute_arm",
+  "Using the attached zombie as the exact reference (identical skin color, wounds, torn sleeve, proportions and art style), draw ONLY ONE arm of this zombie as a separate sprite part for animation: from the shoulder down to the clawed hand, hanging perfectly straight down and limp, fingers slightly curled like claws, side view, the same thickness and length as the zombie's arm, no body, no second arm. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_brute"
+ ],
+ [
+  "zombie_brute_leg",
+  "Using the attached zombie as the exact reference (identical skin color, torn trousers or bare legs, feet, proportions and art style), draw ONLY ONE leg of this zombie as a separate sprite part for animation: from the hip down to and including the bare foot or shoe, perfectly straight and vertical (not bent), side view with the toes pointing right, the same thickness and length as the zombie's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_brute"
+ ],
+ [
+  "zombie_spitter_body",
+  "Edit the attached image: erase BOTH legs completely (everything below the waist / bottom of the shirt or torso) and erase BOTH arms completely (from the shoulders down, including the hands). Keep the head, face, neck, torso, clothing and any spikes or growths on the back exactly as they are: same hunched pose, same size, same position and framing, facing right. Where the arms were, continue the side of the torso, shoulders and torn clothing naturally so the torso is complete, with rounded shoulders. Keep the same art style. Plain white background, no text.",
+  "zombie_spitter"
+ ],
+ [
+  "zombie_spitter_arm",
+  "Using the attached zombie as the exact reference (identical skin color, wounds, torn sleeve, proportions and art style), draw ONLY ONE arm of this zombie as a separate sprite part for animation: from the shoulder down to the clawed hand, hanging perfectly straight down and limp, fingers slightly curled like claws, side view, the same thickness and length as the zombie's arm, no body, no second arm. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_spitter"
+ ],
+ [
+  "zombie_spitter_leg",
+  "Using the attached zombie as the exact reference (identical skin color, torn trousers or bare legs, feet, proportions and art style), draw ONLY ONE leg of this zombie as a separate sprite part for animation: from the hip down to and including the bare foot or shoe, perfectly straight and vertical (not bent), side view with the toes pointing right, the same thickness and length as the zombie's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_spitter"
+ ],
+ [
+  "zombie_boss_body",
+  "Edit the attached image: erase BOTH legs completely (everything below the waist / bottom of the shirt or torso) and erase BOTH arms completely (from the shoulders down, including the hands). Keep the head, face, neck, torso, clothing and any spikes or growths on the back exactly as they are: same hunched pose, same size, same position and framing, facing right. Where the arms were, continue the side of the torso, shoulders and torn clothing naturally so the torso is complete, with rounded shoulders. Keep the same art style. Plain white background, no text.",
+  "zombie_boss"
+ ],
+ [
+  "zombie_boss_arm",
+  "Using the attached zombie as the exact reference (identical skin color, wounds, torn sleeve, proportions and art style), draw ONLY ONE arm of this zombie as a separate sprite part for animation: from the shoulder down to the clawed hand, hanging perfectly straight down and limp, fingers slightly curled like claws, side view, the same thickness and length as the zombie's arm, no body, no second arm. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_boss"
+ ],
+ [
+  "zombie_boss_leg",
+  "Using the attached zombie as the exact reference (identical skin color, torn trousers or bare legs, feet, proportions and art style), draw ONLY ONE leg of this zombie as a separate sprite part for animation: from the hip down to and including the bare foot or shoe, perfectly straight and vertical (not bent), side view with the toes pointing right, the same thickness and length as the zombie's leg, no body, no second leg. Cartoon 2D mobile game style, thick dark outline, soft cel shading, muted desaturated colors, gritty post-apocalyptic mood, plain white background, no text.",
+  "zombie_boss"
  ]
 ]

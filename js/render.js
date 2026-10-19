@@ -80,6 +80,7 @@ const R = {
   init(cv) {
     this.cv = cv; this.ctx = cv.getContext('2d');
     window.addEventListener('resize', () => this.resize());
+    if (window.Gfx) Gfx.init(cv);
     this.resize();
     const r = U.rng(42);
     this.stars = Array.from({ length: 120 }, () => ({ x: r(), y: r() * 0.6, s: r() * 1.5 + 0.3, tw: r() * 6 }));
@@ -100,13 +101,12 @@ const R = {
     this.W = window.innerWidth; this.H = window.innerHeight;
     this.cv.width = this.W * this.dpr; this.cv.height = this.H * this.dpr;
     this.cv.style.width = this.W + 'px'; this.cv.style.height = this.H + 'px';
+    if (window.Gfx) Gfx.resize(this.W, this.H, this.dpr);
   },
   screenToWorld(sx, sy) { const c = this.cam; return { x: (sx - this.W / 2) / c.z + c.x, y: (sy - this.H / 2) / c.z + c.y }; },
 
-  frame(run, dt) {
-    const ctx = this.ctx;
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    if (!run || !run.map) { MenuFX.draw(this, dt); return; }
+  // camera follow / aim look-ahead / clamping; shared by the 2D and the GPU renderer
+  camera(run, dt) {
     const p = run.p, map = run.map;
     const z0 = U.clamp(this.H / (FH * 2.55), 0.5, 1.5);
     // aiming pushes the camera ahead (and long guns zoom out) so you can see what you're aiming at
@@ -124,11 +124,20 @@ const R = {
     this.cam.y = U.clamp(this.cam.y, floorY(map.F) - FH * 0.9 + halfH * 0.2, 140 - halfH * 0.2 + 60);
     const sh = Settings.v.shake ? run.shake : 0;
     const cx = this.cam.x + (sh ? U.rf(Math.random, -sh, sh) : 0), cy = this.cam.y + (sh ? U.rf(Math.random, -sh, sh) : 0);
-
+    return { z, z0, cx, cy, halfW, halfH, view: { x0: cx - halfW - 50, x1: cx + halfW + 50, y0: cy - halfH - 50, y1: cy + halfH + 50 } };
+  },
+  frame(run, dt) {
+    const ctx = this.ctx;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    if (!run || !run.map) { if (window.Gfx) Gfx.show(false); MenuFX.draw(this, dt); return; }
+    if (window.Gfx && Gfx.ok && Gfx.on) { try { return this.frameGPU(run, dt); } finally { this.ctx = ctx; } }
+    if (window.Gfx) Gfx.show(false);
+    const p = run.p, map = run.map;
+    const { z, cx, cy, view } = this.camera(run, dt);
     this.drawSky(run);
     ctx.save();
     ctx.translate(this.W / 2, this.H / 2); ctx.scale(z, z); ctx.translate(-cx, -cy);
-    this.view = { x0: cx - halfW - 50, x1: cx + halfW + 50, y0: cy - halfH - 50, y1: cy + halfH + 50 };
+    this.view = view;
     this.drawGround(run);
     this.drawBuildingMass(run);
     const curRoom = run.navRoom(p);
@@ -386,15 +395,18 @@ const R = {
   },
 
   // ---------- furniture ----------
-  drawFurn(run, fu, rm) {
-    const ctx = this.ctx;
+  // mode: undefined = everything, 'static' = the prop itself (cached on the GPU), 'dyn' = live overlays only
+  drawFurn(run, fu, rm, mode) {
+    const ctx = this.ctx, dyn = mode === 'dyn', stat = mode === 'static';
     const y = rm.outdoor ? floorY(rm.f) - FEET : floorY(rm.f) - FD + 4, x = fu.x, w = fu.w, h = fu.h, L = x - w / 2, T = y - h;
     const rr = U.rng(typeof fu.id === 'number' ? fu.id * 13 + 7 : 99);
     ctx.save();
     const box = (bx, by, bw, bh, c) => { ctx.fillStyle = c; ctx.fillRect(bx, by, bw, bh); };
     const outline = () => { ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2; };
     const art = Art.furn(fu.kind, typeof fu.id === 'number' ? fu.id : 1);
-    if (fu.hitT > 0) { ctx.translate(U.rf(Math.random, -2.5, 2.5), 0); fu.hitT -= 1 / 60; }
+    if (fu.hitT > 0) { ctx.translate(U.rf(Math.random, -2.5, 2.5), 0); if (!stat) fu.hitT -= 1 / 60; }
+    let drawn = false;
+    if (!dyn) {
     const top = !rm.outdoor && FURN_TOPS[fu.kind];
     if (top && art && !art.ext && art.img.complete) {
       const ty = T + top[0], d = 8, c = U.mix(top[1], '#5a6066', 0.35);
@@ -417,7 +429,7 @@ const R = {
         : (searched ? 'brightness(0.6) saturate(0.6)' : 'brightness(0.84) saturate(0.8) sepia(0.12)');
       art2 = Object.assign({}, art, { filt });
     } else if (fu.searched && fu.kind !== 'bag' && fu.loot) ctx.globalAlpha = 0.72;
-    const drawn = art2 && Art.draw(ctx, art2, L, T, w, h);
+    drawn = art2 && Art.draw(ctx, art2, L, T, w, h);
     ctx.globalAlpha = 1;
     if (drawn && fu.kind === 'streetlamp') {
       // the cone starts at the painted bulb (≈ x+22, T+16 for the Gemini lamp drawn 200px tall)
@@ -473,9 +485,11 @@ const R = {
       case 'barrel': box(L, T, w, h, '#3a5a7a'); box(L, T + 12, w, 4, '#2a4a6a'); box(L, T + h - 16, w, 4, '#2a4a6a'); break;
       case 'vent': box(L, T + 10, w, h - 10, '#7d848c'); for (let i = 0; i < 5; i++) box(L + 6, T + 16 + i * 6, w - 12, 2, '#555'); break;
     }
+    if ((fu.loot || fu.kind === 'bag') && fu.searched && fu.kind !== 'bag' && !drawn) { ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(L, T, w, h); }
+    }
+    if (stat) { ctx.restore(); return; }
     // search state overlays
     if (fu.loot || fu.kind === 'bag') {
-      if (fu.searched && fu.kind !== 'bag' && !drawn) { ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(L, T, w, h); }
       if (fu.items && fu.items.length) {
         const bob = Math.sin(run.time * 3 + fu.x) * 3;
         ctx.font = '18px "Apple Color Emoji","Segoe UI Emoji",sans-serif'; ctx.textAlign = 'center';
@@ -615,7 +629,10 @@ const R = {
       // aim towards nearest target (visual)
       let best = 1e9, t = null;
       for (const z of run.zombies) { if (z.dead || z.f !== p.f) continue; const dx = (z.x - p.x) * p.facing; if (dx > 0 && dx < best && dx < 700) { best = dx; t = z; } }
-      if (t) aim = U.clamp(Math.atan2((run.yOf(t) - t.Z.r * 3) - (y - 54), Math.abs(t.x - p.x)), -0.6, 0.6);
+      if (p.aiming && p.aimTgt && !p.aimTgt.dead) t = p.aimTgt;
+      if (t) aim = U.clamp(Math.atan2((run.yOf(t) - t.Z.r * (t.Z.boss ? 4 : 3)) - (y - 54), Math.abs(t.x - p.x)), -0.6, 0.6);
+      else if (p.aiming && this.cam) { const mw = this.screenToWorld(Input.mouse.x, Input.mouse.y); aim = U.clamp(Math.atan2(U.clamp(mw.y + FEET - (y - 54), -80, 80), Math.max(20, Math.abs(mw.x - p.x))), -0.6, 0.6); }
+      if (run.time - (p._fireT ?? -9) < 0.35 && p._fireRel != null) aim = p._fireRel;
     }
     const sw = p.swingT > 0 ? 1 - p.swingT / (p.swingDur || 0.25) : 0;
     const flick = p.hurtT > 0 && Math.floor(p.hurtT * 30) % 2;
@@ -696,11 +713,11 @@ const R = {
       if (useSkel && p.climb) face = p.facing;
       const skSt = useSkel && { amp: p._amp || 0, ph: p._ph || 0, gait, t: run.time, stance: p._st || 0, w: w && dur(w) >= 0 ? w : null,
         crouch: p.climb ? 0 : (it && it.cls !== 'melee' ? 0.32 : 1) * p._cr, downLean: p.climb || !(it && it.cls !== 'melee') ? 0 : p._cr, /* aiming down: knees soft, bent over the gun (not kneeling) */ calm: p._calm || 0, acc: (p._acc || 0) * 0.35, climb: p.climb ? p.climb.t * FH / 34 * Math.PI : null, swing: p.swingT > 0 && (!it || it.cls === 'melee') ? sw : 0,
-        mode: !w ? 'free' : ITEMS[w.id].cls === 'melee' ? 'carry' : (p.aiming || run.time - (p.lastShot || -9) < 1.2 || p.reloadT > 0 || p._crouch || Input.mouse.down || aim !== 0) ? 'aim' : 'carry',   // skeleton: low ready unless there's a reason to raise the gun (no carry art needed) aimA: it && it.cls !== 'melee' ? aimTilt(aim) + (p._dAng - aimTilt(aim)) * (p._cr || 0) : 0,   // kneeling at a hatch: muzzle down through it
+        mode: !w ? 'free' : ITEMS[w.id].cls === 'melee' ? 'carry' : (p.aiming || run.time - (p.lastShot || -9) < 1.2 || p.reloadT > 0 || p._crouch || Input.mouse.down || aim !== 0) ? 'aim' : 'carry',   /* skeleton: low ready unless there's a reason to raise the gun (no carry art needed) */ aimA: it && it.cls !== 'melee' ? aim + (p._dAng - aim) * (p._cr || 0) : 0, flash: it && it.cls !== 'melee' ? Math.max(0, 1 - (run.time - (p._fireT ?? -9)) / 0.07) * (p._flashS || 1) : 0,   // kneeling at a hatch: muzzle down through it
        
         kick: it && it.cls !== 'melee' ? Math.max(0, 1 - (run.time - (p.lastShot || -9)) / 0.12) : 0 };
       const drawPose = (face) => {
-      if (useSkel) { const mz = Skel.draw(this.ctx, base, p.x, y, face, sc, skSt); if (mz && mz.dx != null) this.muzzle = mz; return; }
+      if (useSkel) { p._sk = { base, y: y + turnDip, face, sc, st: skSt }; const mz = Skel.draw(this.ctx, base, p.x, y, face, sc, skSt); if (mz && mz.dx != null) this.muzzle = mz; return; }
       if (bm && bm.ga != null && Override.get(bareKey) && (wa || !w)) {
         const c = this.ctx, k = sc / SPR_PPU, ws = sc * (!it || it.cls === 'melee' ? 1 : 1.05);
         const pr = legKey && Puppet.rig(base), yb = y + (pr ? Puppet.bob(pr, Puppet.ph(p.walk * 0.85)) * k : 0);   // puppet legs lift the body: keep the gun in the hands
@@ -794,14 +811,25 @@ const R = {
       // attack_0 is the upright arms-up "roar" pose: it reads much bigger than the hunched body, so it is only used
       // for the short alert moment (never while being hit or standing in melee range), and drawn a bit smaller
       let lean = 0, ks = 1;
-      if (z.atkCd > 0.65 && (z.blockedBy || Math.abs(z.x - run.p.x) < z.rad + 40)) key = b + '_attack_1';
+      const spitArt = !!(Sprites.meta(b + '_spit_0') && Override.has(b + '_spit_0'));
+      if (z.spitWind > 0) key = spitArt ? b + '_spit_0' : b + '_attack_1';
+      else if (z.spitPost > 0 && spitArt) key = b + (z.spitPost > 0.45 ? '_spit_1' : '_spit_2');
+      else if (z.atkCd > 0.65 && (z.blockedBy || Math.abs(z.x - run.p.x) < z.rad + 40)) key = b + '_attack_1';
       else if (z.alertT > 0 && z.hitT <= 0) { key = b + '_attack_0'; ks = ROAR_FIX[z.type] || 0.92; }
       else if (z.mv || z.climb) key = Sprites.walkKey(b, (z.dist || 0) / stride);
       if (z.hitT > 0) lean = -0.1;   // flinch back when hit instead of swapping poses
       Sprites.shadow(ctx0, z.x, y0, 18 * sc);
       const f = z.hitT > 0 ? 'brightness(2.2)' : tint;
-      if (z.mv && !z.climb && !lean) { const ph = (z.dist || 0) / stride, lk = Sprites.walkKey(b, ph); Sprites.drawSplit(ctx0, key, lk, z.x, y0 + stepBob(ph, 1.2 * sc) + 0.6 * sc, z.facing, sc, f, ph, 0); }
+      // jointed legs when the rig exists (walking / standing); the drawn poses stay for roar, attack, spit and climbing
+      const rig = own && !z.climb && typeof ZSkel !== 'undefined' && ZSkel.has(b) && (key === b || key.startsWith(b + '_walk_'));
+      if (rig) ZSkel.draw(ctx0, b, z, z.x, y0, sc, z.hitT > 0 ? f : null, run.time);
+      else if (z.mv && !z.climb && !lean) { const ph = (z.dist || 0) / stride, lk = Sprites.walkKey(b, ph); Sprites.drawSplit(ctx0, key, lk, z.x, y0 + stepBob(ph, 1.2 * sc) + 0.6 * sc, z.facing, sc, f, ph, 0); }
       else Sprites.draw(ctx0, key, z.x, y0, z.facing, sc * ks, f, lean);
+      if (z.spitWind > 0 && !spitArt) {   // wind-up tell (the drawn frames show the glowing throat themselves): acid swelling at the mouth
+        const k = 1 - z.spitWind / 0.5, mx = z.x + z.facing * 20 * sc, my = y0 - 58 * sc;
+        ctx0.fillStyle = `rgba(157,255,60,${0.25 + 0.35 * k})`; ctx0.beginPath(); ctx0.arc(mx, my, 6 + 10 * k, 0, 7); ctx0.fill();
+        ctx0.fillStyle = '#c8ff6a'; ctx0.beginPath(); ctx0.arc(mx, my, 2 + 4 * k, 0, 7); ctx0.fill();
+      }
       if (z.Z.boss && z.chargeT > 0) { ctx0.strokeStyle = 'rgba(255,60,60,0.6)'; ctx0.lineWidth = 3; for (let i = 0; i < 3; i++) { ctx0.beginPath(); ctx0.moveTo(z.x - z.facing * (50 + i * 16), y0 - 50 - i * 40); ctx0.lineTo(z.x - z.facing * (100 + i * 16), y0 - 50 - i * 40); ctx0.stroke(); } }
       if (z.hp < z.maxHp && !z.Z.boss) { const bw = 34 * sc; ctx0.fillStyle = 'rgba(0,0,0,0.6)'; ctx0.fillRect(z.x - bw / 2, y0 - 104 * sc, bw, 5); ctx0.fillStyle = '#d33'; ctx0.fillRect(z.x - bw / 2 + 1, y0 - 104 * sc + 1, (bw - 2) * Math.max(0, z.hp / z.maxHp), 3); }
       if (z.state === 'idle' && run.map.rooms[z.room].revealed) { ctx0.fillStyle = 'rgba(200,220,255,0.5)'; ctx0.font = '600 13px "Chakra Petch", Kanit, sans-serif'; ctx0.textAlign = 'center'; ctx0.fillText('z z', z.x + 14, y0 - 106 * sc + Math.sin(run.time * 2 + z.ph) * 3); }
@@ -968,11 +996,14 @@ const R = {
     const ctx = this.ctx;
     for (const b of run.bullets) {
       ctx.strokeStyle = b.bolt ? '#c8a26a' : b.crit ? '#fff26a' : '#ffd76a'; ctx.lineWidth = b.bolt ? 3 : 2.5;
-      const l = b.bolt ? 22 : 18, n = Math.hypot(b.vx, b.vy);
+      const l = Math.min(b.bolt ? 22 : 18, (b.dist || 0) + 2), n = Math.hypot(b.vx, b.vy);
       ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx / n * l, b.y - b.vy / n * l); ctx.stroke();
     }
     for (const n of run.nades) { ctx.save(); ctx.translate(n.x, n.y); ctx.rotate(n.rot); ctx.fillStyle = '#3a4a2a'; ctx.beginPath(); ctx.ellipse(0, 0, 7, 9, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#888'; ctx.fillRect(-2, -12, 4, 4); ctx.restore(); if (n.t < 0.5 && Math.floor(n.t * 20) % 2) { ctx.fillStyle = '#f33'; ctx.beginPath(); ctx.arc(n.x, n.y, 3, 0, 7); ctx.fill(); } }
-    for (const a of run.acid) { ctx.fillStyle = '#9dff3c'; ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(157,255,60,0.3)'; ctx.beginPath(); ctx.arc(a.x - Math.sign(a.vx) * 10, a.y, 5, 0, 7); ctx.fill(); }
+    for (const a of run.acid) {
+      if (a.pool) { const k = Math.min(1, a.t / 0.8), fy = floorY(a.f) - 2; ctx.fillStyle = `rgba(140,230,50,${0.45 * k})`; ctx.beginPath(); ctx.ellipse(a.x, fy, 22, 4, 0, 0, 7); ctx.fill(); ctx.fillStyle = `rgba(200,255,120,${0.5 * k})`; ctx.beginPath(); ctx.ellipse(a.x - 5, fy - 1, 7, 1.6, 0, 0, 7); ctx.fill(); continue; }
+      ctx.fillStyle = '#9dff3c'; ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(157,255,60,0.3)'; ctx.beginPath(); ctx.arc(a.x - a.vx * 0.03, a.y - a.vy * 0.03, 5, 0, 7); ctx.fill();
+    }
   },
   drawParticles(run) {
     const ctx = this.ctx;
@@ -984,6 +1015,7 @@ const R = {
         ctx.fillStyle = '#fff6c8'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(8, -4); ctx.lineTo(18, 0); ctx.lineTo(8, 4); ctx.closePath(); ctx.fill();
         ctx.restore(); continue;
       }
+      if (q.streak) { const k = Math.max(0, q.t / q.max); ctx.strokeStyle = `rgba(255,220,120,${0.85 * k})`; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x2, q.y2); ctx.stroke(); continue; }
       if (q.smoke) { ctx.globalAlpha = Math.max(0, Math.min(0.5, q.t * 0.6)); ctx.fillStyle = '#8a8e94'; ctx.beginPath(); ctx.arc(q.x, q.y, q.s, 0, 7); ctx.fill(); ctx.globalAlpha = 1; continue; }
       if (q.casing) { ctx.globalAlpha = Math.min(1, q.t * 2); ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.fillStyle = q.c; ctx.strokeStyle = '#3a2a10'; ctx.lineWidth = 0.8; ctx.fillRect(-2.5, -1.2, 5, 2.4); ctx.strokeRect(-2.5, -1.2, 5, 2.4); ctx.restore(); ctx.globalAlpha = 1; continue; }
       if (q.boom) { const k = 1 - q.t / 0.35; const rr = 40 + k * 140; const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, rr); g.addColorStop(0, `rgba(255,240,180,${1 - k})`); g.addColorStop(0.4, `rgba(255,140,40,${0.8 - k * 0.8})`); g.addColorStop(1, 'rgba(80,40,20,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, rr, 0, 7); ctx.fill(); continue; }
@@ -1067,22 +1099,27 @@ const R = {
       for (const s of this.snow) { const y = ((s.y + run.time * 0.05 * s.v) % 1) * this.H; const x = ((s.x + Math.sin(run.time + s.y * 10) * 0.01 - this.cam.x * 0.0002) % 1 + 1) % 1 * this.W; ctx.fillRect(x, y, s.s, s.s); }
     }
   },
+  // full-screen radial shades, painted once per screen size and reused (a gradient fill every frame is slow)
+  vigImg(kind) {
+    const k = kind + this.W + 'x' + this.H; this._vig = this._vig || {};
+    if (this._vig[k]) return this._vig[k];
+    const c = document.createElement('canvas'), s = 0.5; c.width = Math.ceil(this.W * s); c.height = Math.ceil(this.H * s);
+    const x = c.getContext('2d'), W = c.width, H = c.height;
+    const [r0, r1, c0, c1] = { dark: [0.3, 0.85, 'rgba(0,0,0,0)', 'rgba(0,0,0,0.55)'], red: [0.25, 0.8, 'rgba(160,0,0,0)', 'rgba(160,0,0,1)'], hide: [0.12, 0.7, 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.78)'] }[kind];
+    const g = x.createRadialGradient(W / 2, H / 2, H * r0, W / 2, H / 2, H * r1); g.addColorStop(0, c0); g.addColorStop(1, c1);
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (const kk in this._vig) if (!kk.endsWith(this.W + 'x' + this.H)) delete this._vig[kk];
+    return (this._vig[k] = c);
+  },
   drawVignette(run) {
     const ctx = this.ctx, p = run.p;
-    const g = ctx.createRadialGradient(this.W / 2, this.H / 2, this.H * 0.3, this.W / 2, this.H / 2, this.H * 0.85);
-    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.55)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, this.W, this.H);
+    ctx.drawImage(this.vigImg('dark'), 0, 0, this.W, this.H);
     const low = 1 - p.hp / p.maxHp;
     if (p.hurtT > 0 || low > 0.6) {
       const a = Math.max(p.hurtT * 1.2, low > 0.6 ? (low - 0.6) * 1.2 * (0.6 + 0.4 * Math.sin(run.time * 6)) : 0);
-      const g2 = ctx.createRadialGradient(this.W / 2, this.H / 2, this.H * 0.25, this.W / 2, this.H / 2, this.H * 0.8);
-      g2.addColorStop(0, 'rgba(160,0,0,0)'); g2.addColorStop(1, `rgba(160,0,0,${Math.min(0.38, a)})`);
-      ctx.fillStyle = g2; ctx.fillRect(0, 0, this.W, this.H);
+      ctx.globalAlpha = Math.min(0.38, a); ctx.drawImage(this.vigImg('red'), 0, 0, this.W, this.H); ctx.globalAlpha = 1;
     }
-    if (p.hidden) {
-      const gh = ctx.createRadialGradient(this.W / 2, this.H / 2, this.H * 0.12, this.W / 2, this.H / 2, this.H * 0.7);
-      gh.addColorStop(0, 'rgba(0,0,0,0.15)'); gh.addColorStop(1, 'rgba(0,0,0,0.78)'); ctx.fillStyle = gh; ctx.fillRect(0, 0, this.W, this.H);
-    }
+    if (p.hidden) ctx.drawImage(this.vigImg('hide'), 0, 0, this.W, this.H);
     if (p.inf > 30) { ctx.fillStyle = `rgba(80,160,40,${(p.inf - 30) / 70 * 0.18})`; ctx.fillRect(0, 0, this.W, this.H); }
   },
 

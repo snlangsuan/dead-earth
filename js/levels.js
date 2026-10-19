@@ -16,7 +16,7 @@ const Levels = {
   },
   range(stageId) { const st = STAGE_BY_ID[stageId]; return [1 + st.gi * 2, 3 + st.gi * 2]; },
   BOSS_FROM: 6,            // no boss below this location level
-  BRUTE_FROM: 4, SPITTER_FROM: 7,
+  BRUTE_FROM: 4, SPITTER_FROM: 3,
   bossHp(lv) { return 0.45 + lv * 0.035; },    // ×base HP: Lv6 0.66 · Lv20 1.15 · Lv40 1.85 · Lv70 2.9
   bossDmg(lv) { return 0.6 + lv * 0.012; },    // ×base damage: Lv6 0.67 · Lv30 0.96 · Lv70 1.44
   // per-run tuning from the level

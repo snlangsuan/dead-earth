@@ -1,7 +1,7 @@
 // ---------- Procedural audio: synthesized SFX + adaptive music (WebAudio, no files) ----------
 const SETTINGS_KEY = 'deadearth_settings_v1';
 const Settings = {
-  v: { master: 0.8, music: 0.5, sfx: 0.85, mute: false, shake: true, dmgNums: true },
+  v: { master: 0.8, music: 0.5, sfx: 0.85, mute: false, shake: true, dmgNums: true, gpu: true },
   load() { try { Object.assign(this.v, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { } },
   save() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.v)); } catch (e) { } Snd.applyVolumes(); },
 };
