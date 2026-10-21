@@ -53,6 +53,12 @@ jobs:
           PY
           du -sh _site
 
+      # Version shown on the title screen: the commit being deployed and its date
+      - name: Write build info
+        run: |
+          echo "window.GAME_BUILD = {\"sha\": \"${GITHUB_SHA}\", \"date\": \"$(git log -1 --format=%cI)\"};" > _site/js/build_info.js
+          cat _site/js/build_info.js
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

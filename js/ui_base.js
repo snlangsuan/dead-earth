@@ -59,7 +59,7 @@ const UI = {
       State.hasSave() ? U.el('button', { class: 'btn primary big', onclick: () => { State.load(); this.showBase(); } }, 'เล่นต่อ') : null,
       U.el('button', { class: 'btn big' + (State.hasSave() ? '' : ' primary'), onclick: () => { if (!State.hasSave()) this.showCharSelect(); else this.ask('เริ่มเกมใหม่?', 'เซฟเดิมจะถูกลบทั้งหมด — ของในคลัง ผู้รอดชีวิต และความคืบหน้า', 'เริ่มใหม่', () => this.showCharSelect(), true); } }, 'เริ่มเกมใหม่'),
       U.el('button', { class: 'btn big', onclick: () => this.openSettings() }, 'ตั้งค่า'),
-      U.el('div', { class: 'foot' }, 'แนะนำให้เล่นด้วยคีย์บอร์ด + เมาส์  ·  กด M ปิด/เปิดเสียง  ·  v0.9')));
+      U.el('div', { class: 'foot' }, 'แนะนำให้เล่นด้วยคีย์บอร์ด + เมาส์  ·  กด M ปิด/เปิดเสียง  ·  ' + (window.versionLabel ? versionLabel() : 'v0.10.0'))));
   },
   showCharSelect() {
     const s = this.scr(); s.className = 'show title'; s.innerHTML = ''; MenuFX.mode = 'title';
