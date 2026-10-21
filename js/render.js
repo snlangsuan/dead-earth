@@ -139,6 +139,7 @@ const R = {
     ctx.translate(this.W / 2, this.H / 2); ctx.scale(z, z); ctx.translate(-cx, -cy);
     this.view = view;
     this.drawGround(run);
+    if (typeof LocArt !== 'undefined') LocArt.draw(ctx, run);   // the real place across the street + its name board
     this.drawBuildingMass(run);
     const curRoom = run.navRoom(p);
     for (const rm of map.rooms) if (this.inView(rm)) this.drawRoomBack(run, rm, rm.id === curRoom);
@@ -375,7 +376,7 @@ const R = {
           ctx.fillRect(x - ww / 2 - 4, y1 - DOOR_H, 5, DOOR_H); ctx.strokeRect(x - ww / 2 - 4, y1 - DOOR_H, 5, DOOR_H);
           ctx.fillRect(x + ww / 2 - 1, y1 - DOOR_H, 5, DOOR_H); ctx.strokeRect(x + ww / 2 - 1, y1 - DOOR_H, 5, DOOR_H);
           Art.draw(ctx, Art.door(outer), x + ww / 2 + 3, y1 - DOOR_H);
-          if (outer && f === 0) { ctx.fillStyle = '#1e8a4a'; ctx.strokeStyle = OL; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x - 20, y1 - DOOR_H - 28, 40, 14, 3); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#e8ffe8'; ctx.font = '800 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('EXIT', x, y1 - DOOR_H - 18); }
+          if (outer && f === 0) { const ew = typeof LocArt !== 'undefined' ? LocArt.exitWord(run) : 'EXIT'; ctx.font = '800 9px Kanit, system-ui, sans-serif'; const bw = Math.max(40, ctx.measureText(ew).width + 12); ctx.fillStyle = '#1e8a4a'; ctx.strokeStyle = OL; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x - bw / 2, y1 - DOOR_H - 28, bw, 14, 3); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#e8ffe8'; ctx.textAlign = 'center'; ctx.fillText(ew, x, y1 - DOOR_H - 18); }
         }
       }
     }
@@ -404,7 +405,7 @@ const R = {
     const box = (bx, by, bw, bh, c) => { ctx.fillStyle = c; ctx.fillRect(bx, by, bw, bh); };
     const outline = () => { ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2; };
     const art = Art.furn(fu.kind, typeof fu.id === 'number' ? fu.id : 1);
-    if (fu.hitT > 0) { ctx.translate(U.rf(Math.random, -2.5, 2.5), 0); if (!stat) fu.hitT -= 1 / 60; }
+    if (fu.hitT > 0) ctx.translate(U.rf(Math.random, -2.5, 2.5), 0);
     let drawn = false;
     if (!dyn) {
     const top = !rm.outdoor && FURN_TOPS[fu.kind];
@@ -661,13 +662,21 @@ const R = {
       // motion state for the puppet: walk weight eases in/out, gait from movement mode, leg phase from distance, smooth turning
       const now = run.time, dtp = Math.min(0.05, Math.max(0, now - (p._lt ?? now))); p._lt = now;
       const rig = Puppet.rig(base);
-      p._amp = (p._amp || 0) + ((p.moving && !p.climb ? 1 : 0) - (p._amp || 0)) * Math.min(1, dtp * (p.moving ? 10 : 7));
+      // stopping: the stride only shrinks once the legs have reached double support (see below), so the feet don't slide
+      const _r = ((((p._ph || 0) % Math.PI) + Math.PI) % Math.PI), _mid = !p.moving && _r > 0.01 && _r < Math.PI - 0.01;
+      p._amp = (p._amp || 0) + ((p.moving && !p.climb ? 1 : 0) - (p._amp || 0)) * Math.min(1, dtp * (p.moving ? 10 : _mid ? 1.5 : 7));
       const gait = p.gait === 'sneak' ? 'sneak' : p.gait === 'run' && Math.abs(p.vx || 0) > p.spd * 1.1 ? 'run' : 'walk';
       p._gr = (p._gr ?? Puppet.GAIT.walk.rate) + (Puppet.GAIT[gait].rate - (p._gr ?? Puppet.GAIT.walk.rate)) * Math.min(1, dtp * 6);
       const back = (p.vx || 0) * p.facing < -5 ? -1 : 1, dw = p.walk - (p._lw ?? p.walk); p._lw = p.walk;
+      // a gun up and walking: the tactical walk (tactical.js / skin.js)
+      const skGait = gait === 'walk' && it && it.cls !== 'melee' && typeof Tac !== 'undefined' && Skin.CFG.tac ? 'tac' : gait;
       if (skel) {   // skeleton: the phase comes from the ground covered, so the planted foot stays (nearly) put on the floor
-        p._sl = (p._sl ?? Skel.stepLen(base, sc, gait)) + (Skel.stepLen(base, sc, gait) - (p._sl ?? Skel.stepLen(base, sc, gait))) * Math.min(1, dtp * 6);
+        p._sl = (p._sl ?? Skel.stepLen(base, sc, skGait)) + (Skel.stepLen(base, sc, skGait) - (p._sl ?? Skel.stepLen(base, sc, skGait))) * Math.min(1, dtp * 6);
         p._ph = (p._ph || 0) + dw * 16 * Math.PI / p._sl * back;
+        // stopping: carry the legs on to the next moment both feet are on the floor (phase = k·π), then keep that
+        // staggered stance (feet apart, weight between them) instead of shrinking the stride (which slides the feet)
+        if (!p.moving && !p.climb && p._amp > 0.02) { const r = ((p._ph % Math.PI) + Math.PI) % Math.PI; if (r > 0.01) p._ph += Math.min(Math.PI - r, 10 * dtp); }
+        p._stw = (p._stw || 0) + ((p.moving || p.climb ? 0 : it && it.cls !== 'melee' ? 0.5 : 0.34) - (p._stw || 0)) * Math.min(1, dtp * 4);   // with a gun: a wide, staggered shooting stance
       } else p._ph = (p._ph || 0) + dw * 0.85 * Math.PI / 2 * p._gr * back;   // walking backwards: the legs step backwards   // walking backwards: the legs step backwards
       // turning around: a short turn (0.2 s) — through a front-facing frame when the character has one, otherwise a squash
       if (p._lf !== p.facing) { if (p._lf != null && !p.climb) p._turnT = Puppet.TURN; p._lf = p.facing; }
@@ -695,7 +704,7 @@ const R = {
       this.ctx.save(); if (turnDip) this.ctx.translate(0, turnDip);   // a small dip while turning around
       if (p.noiseFx) { // how far that footstep / rummage carried
         const c = this.ctx, k = 1 - p.noiseFx.t / p.noiseFx.max;
-        c.save(); c.strokeStyle = `rgba(255,220,140,${0.35 * (1 - k)})`; c.lineWidth = 2; c.setLineDash([6, 6]);
+        c.save(); c.strokeStyle = `rgba(255,220,140,${0.35 * (1 - k)})`; c.lineWidth = 2; if (!(typeof PixiCtx !== 'undefined' && c instanceof PixiCtx)) c.setLineDash([6, 6]);   /* GPU: a dashed line would go to the overlay, above the player */
         c.beginPath(); c.ellipse(p.x, y, p.noiseFx.r * (0.35 + 0.65 * k), 10 + 14 * k, 0, 0, 7); c.stroke(); c.restore();
       }
       // empty-handed pose + the weapon actually held, placed at the grip point found during processing
@@ -703,6 +712,11 @@ const R = {
       const bm = bareKey && Sprites.meta(bareKey), wa = w && WEAPON_ART[w.id] && Parts.weapon(w.id);
       this.muzzle = null;
       const useSkel = skel;
+      // fighting stance only when it's needed: a zombie close on this floor, a recent swing, aiming / holding the mouse, kneeling
+      if (p.swingT > 0) p._swT = run.time;
+      const thr = (run.zombies || []).some(z => !z.dead && z.f === p.f && Math.abs(z.x - p.x) < 360);
+      const gW = thr || run.time - (p._swT ?? -9) < 1.5 || p.aiming || Input.mouse.down || crouch ? 1 : 0;
+      p._guard = (p._guard ?? 1) + (gW - (p._guard ?? 1)) * Math.min(1, dtp * (gW ? 9 : 2.5));
       p._cr = (p._cr || 0) + ((crouch ? 1 : 0) - (p._cr || 0)) * Math.min(1, dtp * 9);   // kneel down / stand up smoothly
       // relaxing: a few seconds without moving, shooting, aiming or swinging and the weapon sinks into a tired, relaxed carry
       if (p.moving || p.aiming || p.swingT > 0 || run.time - (p.lastShot || -9) < 1 || p.reloadT > 0 || crouch || p._turnT > 0) p._busyT = run.time;
@@ -711,8 +725,9 @@ const R = {
       const av = dtp > 0 ? ((p._amp || 0) - (p._ampP ?? (p._amp || 0))) / dtp : 0; p._ampP = p._amp || 0;
       p._acc = (p._acc || 0) + (av - (p._acc || 0)) * Math.min(1, dtp * 8);
       if (useSkel && p.climb) face = p.facing;
-      const skSt = useSkel && { amp: p._amp || 0, ph: p._ph || 0, gait, t: run.time, stance: p._st || 0, w: w && dur(w) >= 0 ? w : null,
-        crouch: p.climb ? 0 : (it && it.cls !== 'melee' ? 0.32 : 1) * p._cr, downLean: p.climb || !(it && it.cls !== 'melee') ? 0 : p._cr, /* aiming down: knees soft, bent over the gun (not kneeling) */ calm: p._calm || 0, acc: (p._acc || 0) * 0.35, climb: p.climb ? p.climb.t * FH / 34 * Math.PI : null, swing: p.swingT > 0 && (!it || it.cls === 'melee') ? sw : 0,
+      const tac = useSkel && typeof Tac !== 'undefined' ? Tac.state(p, run, it) : { rc: null, reload: null };
+      const skSt = useSkel && { amp: p._amp || 0, stanceW: p.climb ? 0 : p._stw || 0, ph: p._ph || 0, gait: skGait, t: run.time, rc: tac.rc, reload: tac.reload, stance: p._st || 0, w: w && dur(w) >= 0 ? w : null,
+        crouch: p.climb ? 0 : (it && it.cls !== 'melee' ? 0.32 : 1) * p._cr, downLean: p.climb || !(it && it.cls !== 'melee') ? 0 : p._cr, /* aiming down: knees soft, bent over the gun (not kneeling) */ guard: p._guard ?? 1, calm: p._calm || 0, acc: (p._acc || 0) * 0.35, climb: p.climb ? p.climb.t * FH / 34 * Math.PI : null, swing: p.swingT > 0 && (!it || it.cls === 'melee') ? sw : 0,
         mode: !w ? 'free' : ITEMS[w.id].cls === 'melee' ? 'carry' : (p.aiming || run.time - (p.lastShot || -9) < 1.2 || p.reloadT > 0 || p._crouch || Input.mouse.down || aim !== 0) ? 'aim' : 'carry',   /* skeleton: low ready unless there's a reason to raise the gun (no carry art needed) */ aimA: it && it.cls !== 'melee' ? aim + (p._dAng - aim) * (p._cr || 0) : 0, flash: it && it.cls !== 'melee' ? Math.max(0, 1 - (run.time - (p._fireT ?? -9)) / 0.07) * (p._flashS || 1) : 0,   // kneeling at a hatch: muzzle down through it
        
         kick: it && it.cls !== 'melee' ? Math.max(0, 1 - (run.time - (p.lastShot || -9)) / 0.12) : 0 };
@@ -803,8 +818,11 @@ const R = {
       const sc = (z.Z.boss ? 2.0 : z.type === 'brute' ? 1.45 : z.type === 'runner' ? 0.95 : 1) * CHAR_SCALE;
       const tint = own ? '' : ({ brute: 'saturate(1.3) brightness(0.78) contrast(1.1)', spitter: 'hue-rotate(-35deg) saturate(1.8)', boss: 'hue-rotate(-100deg) saturate(2) brightness(0.85)', runner: 'brightness(1.12) saturate(0.8)' }[z.type] || '');
       if (z.dead) {
-        ctx0.save(); ctx0.globalAlpha = Math.max(0, Math.min(1, (6 - z.deadT) / 2));
-        Sprites.draw(ctx0, b + '_dead', z.x, y0 + 4, z.facing, sc, tint); ctx0.restore(); return;
+        const rigDie = own && !z.climb && typeof ZSkel !== 'undefined' && ZSkel.has(b) && z.deadT < 0.42;
+        const cross = rigDie ? U.clamp((z.deadT - 0.26) / 0.16, 0, 1) : 1;   // the toppling rig fades into the corpse picture
+        if (rigDie) { ctx0.save(); ctx0.globalAlpha *= 1 - cross; ZSkel.draw(ctx0, b, z, z.x, y0, sc, null, run.time); ctx0.restore(); }
+        ctx0.save(); ctx0.globalAlpha = Math.max(0, Math.min(1, (6 - z.deadT) / 2)) * cross;
+        if (ctx0.globalAlpha > 0) Sprites.draw(ctx0, b + '_dead', z.x, y0 + 4, z.facing, sc, tint); ctx0.restore(); return;
       }
       let key = b;
       const stride = 22 * sc * (z.type === 'runner' ? 1.3 : z.type === 'brute' ? 1.2 : 1);
@@ -893,7 +911,6 @@ const R = {
       const d = run.doorAt.get(lk.f + '|' + lk.x), a = map.rooms[d.a], c = map.rooms[d.b];
       if (!a.revealed && !c.revealed && !run.powered) continue;
       const y1 = floorY(lk.f) - 2, H = DOOR_H - 4, sh = lk.hitT > 0 ? U.rf(Math.random, -2, 2) : 0;
-      lk.hitT = Math.max(0, lk.hitT - 1 / 60);
       ctx.save(); ctx.translate(lk.x + sh, y1);
       ctx.fillStyle = '#8a929a'; ctx.fillRect(-9, -H * 0.5 - 3, 18, 6);
       const col = lk.pickOnly ? '#7fd0ff' : '#c9a227';
@@ -906,7 +923,6 @@ const R = {
     for (const b of run.barricades) {
       if (b.isDoor) continue; // doors draw themselves (drawDoors)
       const shake = b.hitT > 0 ? U.rf(Math.random, -2, 2) : 0;
-      b.hitT = Math.max(0, b.hitT - 1 / 60);
       const dmg = 1 - b.hp / b.max;
       ctx.save();
       if (b.kind === 'door') {
@@ -1017,6 +1033,7 @@ const R = {
       }
       if (q.streak) { const k = Math.max(0, q.t / q.max); ctx.strokeStyle = `rgba(255,220,120,${0.85 * k})`; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x2, q.y2); ctx.stroke(); continue; }
       if (q.smoke) { ctx.globalAlpha = Math.max(0, Math.min(0.5, q.t * 0.6)); ctx.fillStyle = '#8a8e94'; ctx.beginPath(); ctx.arc(q.x, q.y, q.s, 0, 7); ctx.fill(); ctx.globalAlpha = 1; continue; }
+      if (q.mag) { ctx.globalAlpha = Math.min(1, q.t * 2); ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot * 0.35); ctx.fillStyle = q.c; ctx.strokeStyle = '#0e0e0e'; ctx.lineWidth = 0.8; const mw = q.mag === 'p' ? 1.6 : 2.4, mh = q.mag === 'p' ? 4.5 : 7; ctx.fillRect(-mw, -mh, mw * 2, mh * 2); ctx.strokeRect(-mw, -mh, mw * 2, mh * 2); ctx.restore(); ctx.globalAlpha = 1; continue; }   // dropped magazine
       if (q.casing) { ctx.globalAlpha = Math.min(1, q.t * 2); ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.fillStyle = q.c; ctx.strokeStyle = '#3a2a10'; ctx.lineWidth = 0.8; ctx.fillRect(-2.5, -1.2, 5, 2.4); ctx.strokeRect(-2.5, -1.2, 5, 2.4); ctx.restore(); ctx.globalAlpha = 1; continue; }
       if (q.boom) { const k = 1 - q.t / 0.35; const rr = 40 + k * 140; const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, rr); g.addColorStop(0, `rgba(255,240,180,${1 - k})`); g.addColorStop(0.4, `rgba(255,140,40,${0.8 - k * 0.8})`); g.addColorStop(1, 'rgba(80,40,20,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, rr, 0, 7); ctx.fill(); continue; }
       ctx.globalAlpha = Math.min(1, q.t * 3);

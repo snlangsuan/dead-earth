@@ -130,8 +130,10 @@ Object.assign(R, {
         ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(Math.min(lx + dir * 6, lx + dir * 24), wy1 - dh * k + 14, 18, 30); ctx.fillRect(Math.min(lx + dir * 6, lx + dir * 24), wy1 - dh * k + 56, 18, 34);
         ctx.fillStyle = '#d4b06a'; ctx.beginPath(); ctx.arc(lx + dir * (lw - 6), wy1 - dh * k * 0.5, 2.2, 0, 7); ctx.fill();
         if ((left && rm.x0 === 0 && rm.f === 0) || (!left && rm.x1 === run.map.BW && rm.f === 0)) {
-          ctx.fillStyle = '#1e8a4a'; ctx.strokeStyle = OL; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(ix + (left ? 4 : -40), wy1 - dh * k - 20, 36, 13, 3); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = '#e8ffe8'; ctx.font = '800 8px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('EXIT', ix + (left ? 22 : -22), wy1 - dh * k - 10.5);
+          const ew = typeof LocArt !== 'undefined' ? LocArt.exitWord(run) : 'EXIT';   // in the local language
+          ctx.font = '800 8px Kanit, system-ui, sans-serif'; const bw = Math.max(36, ctx.measureText(ew).width + 10);
+          ctx.fillStyle = '#1e8a4a'; ctx.strokeStyle = OL; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(ix + (left ? 4 : -4 - bw), wy1 - dh * k - 20, bw, 13, 3); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#e8ffe8'; ctx.textAlign = 'center'; ctx.fillText(ew, ix + (left ? 4 + bw / 2 : -4 - bw / 2), wy1 - dh * k - 10.5);
         }
       }
     };

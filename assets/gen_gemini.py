@@ -12,6 +12,7 @@ Usage (in Terminal):
     python3 assets/gen_gemini.py --only pistolbare  # pistol pose with empty hands (any handgun is drawn in-game)
     python3 assets/gen_gemini.py --redo furn_bed  # regenerate specific files
     python3 assets/gen_gemini.py --list           # show all names
+    python3 assets/gen_gemini.py --only places    # every city skyline (sky_*) and location exterior (lm_*)
 
 The API key is read from the GEMINI_API_KEY environment variable, or asked for (hidden input).
 Images are saved to assets/gemini/<name>.png. Existing files are skipped, so you can stop and resume.
@@ -25,7 +26,8 @@ PROMPTS = os.path.join(HERE, "gemini_prompts.json")
 STYLE_REF = "char_jake"   # first image; attached to every later request to keep one style
 PREFIX = "Same art style as the attached reference image (match its outline thickness, shading and color palette), but draw a different subject: "
 API = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-DEFAULT_MODELS = ["gemini-2.5-flash-image", "gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"]
+# current image models first (Nano Banana 2 / Pro / 2.1), the legacy 2.5 model last; 2.0 image models are retired
+DEFAULT_MODELS = ["gemini-3.1-flash-image", "gemini-3-pro-image", "gemini-nano-banana-2.1", "gemini-2.5-flash-image"]
 
 
 def env_key():
@@ -73,7 +75,9 @@ def generate(models, key, prompt, ref_bytes, raw=False, extra=None):
     for model in models:
         for attempt in range(4):
             try:
-                return call(model, key, parts)
+                r = call(model, key, parts)
+                print(f"    model: {model}")
+                return r
             except urllib.error.HTTPError as e:
                 msg = e.read().decode(errors="ignore")[:400]
                 last = f"HTTP {e.code} ({model}): {msg}"
@@ -120,6 +124,7 @@ def main():
         if "pistolbare" in only and n.endswith("_pistol_bare"): base = "pistolbare"
         if "crouch" in only and "_crouch" in n: base = "crouch"
         if "walksheet" in only and n.endswith("_walksheet"): base = "walksheet"
+        if "places" in only and (n.startswith("sky_") or n.startswith("lm_")): base = "places"   # city skylines + location exteriors
         if "wear" in only and (n.startswith("icon_top_") or n.startswith("icon_pants_")): base = "wear"
         if "rig" in only and (n.endswith("_body") or n.endswith("_leg") or n.endswith("_arm")) and n.startswith("char_"): base = "rig"
         sel = not only or n in only or base in only or n in redo

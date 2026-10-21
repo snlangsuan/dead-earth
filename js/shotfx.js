@@ -21,7 +21,7 @@ Object.assign(R, {
   measureMuzzle(p, rel) {
     const k = p._sk; if (!k || typeof Skel === 'undefined') return null;
     const face = p.facing || k.face;
-    const st = Object.assign({}, k.st, { mode: 'aim', aimA: rel ?? k.st.aimA, kick: 0, swing: 0, turn: null, flash: 0 });
+    const st = Object.assign({}, k.st, { mode: 'aim', aimA: rel ?? k.st.aimA, kick: 0, rc: null, reload: null, swing: 0, turn: null, flash: 0 });
     MeasureCtx.setTransform(1, 0, 0, 1, 0, 0); MeasureCtx.st.length = 0;
     const mz = Skel.draw(MeasureCtx, k.base, p.x, k.y, face, k.sc, st);
     return mz && mz.dx != null ? { x: p.x + face * mz.dx, y: k.y - mz.dy } : null;

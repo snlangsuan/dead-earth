@@ -17,7 +17,7 @@ class PixiCtx {
     this.reset(null);
   }
   reset(target) {
-    this.si = this.gi = this.bi = this.mi = 0;
+    this.si = this.gi = this.bi = this.mi = 0; if (this.mused) this.mused.clear();
     this.m = [1, 0, 0, 1, 0, 0]; this.stack = [];
     this.globalAlpha = 1; this.fillStyle = '#000'; this.strokeStyle = '#000'; this.lineWidth = 1; this.lineCap = 'butt'; this.lineJoin = 'miter';
     this.font = '10px sans-serif'; this.textAlign = 'start'; this.textBaseline = 'alphabetic'; this.filter = 'none';
@@ -30,6 +30,7 @@ class PixiCtx {
     for (let i = this.gi; i < this.graphs.length; i++) { const g = this.graphs[i]; if (g.parent) { g.clear(); g.parent.removeChild(g); } }
     for (let i = this.bi; i < this.boxes.length; i++) { const b = this.boxes[i]; if (b.parent) b.parent.removeChild(b); b.mask = null; }
     for (let i = this.mi; i < this.masks.length; i++) { const g = this.masks[i]; if (g.parent) { g.clear(); g.parent.removeChild(g); } }
+    if (this.meshes) for (const [k, list] of this.meshes) { const n = this.mused.get(k) || 0; for (let i = n; i < list.length; i++) if (list[i].parent) list[i].parent.removeChild(list[i]); }
   }
   setLayer(c) { this.target = c; this.g = null; }
   get canvas() { return this.gpu.overlay.canvas; }
@@ -165,6 +166,20 @@ class PixiCtx {
     sp.transform.setFromMatrix(_M);
     this.target.addChild(sp); this.g = null;
   }
+  // ----- skinned meshes (skin.js): vertices in the current space, uvs 0..1, triangle indices; pooled per key -----
+  drawMesh(img, v, uv, idx, key) {
+    const tex = this._tex(img); if (!tex) return;
+    const pool = this.meshes || (this.meshes = new Map()), used = this.mused || (this.mused = new Map());
+    const k = key + ':' + idx.length, n = used.get(k) || 0; used.set(k, n + 1);
+    let list = pool.get(k); if (!list) pool.set(k, list = []);
+    let me = list[n];
+    const m = this.m, out = me ? me._v : new Float32Array(v.length);
+    for (let i = 0; i < v.length; i += 2) { const x = v[i], y = v[i + 1]; out[i] = m[0] * x + m[2] * y + m[4]; out[i + 1] = m[1] * x + m[3] * y + m[5]; }
+    if (!me) { me = new PIXI.SimpleMesh(tex, out, uv, idx); me._v = out; list.push(me); }
+    else { if (me.texture !== tex) me.texture = tex; me.vertices = out; }
+    me.alpha = this.globalAlpha; me.visible = true;
+    this.target.addChild(me); this.g = null;
+  }
   // ----- things Pixi does not do cheaply go to the 2D overlay canvas with the same transform -----
   _ov() { const o = this.gpu.overlay, m = this.m; o.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]); o.globalAlpha = this.globalAlpha; return o; }
   fillText(t, x, y, mw) { const o = this._ov(); o.font = this.font; o.textAlign = this.textAlign; o.textBaseline = this.textBaseline; o.fillStyle = this.fillStyle; mw === undefined ? o.fillText(t, x, y) : o.fillText(t, x, y, mw); o.globalAlpha = 1; }
@@ -292,6 +307,7 @@ Object.assign(R, {
     this.ctx = null;
     const bg = THEMES[run.loc.theme].bg, gx0 = -STREET - 900, gx1 = map.BW + STREET + 900, gy0 = -40, gy1 = SLAB + 520;
     G.region('ground', 'ground', 'g', gx0, gy0, gx1, gy1, Math.min(S, 1.5), c => { this.ctx = c; const v = this.view; this.view = { x0: gx0, x1: gx1, y0: gy0, y1: gy1 - 500 }; this.drawGround(run); this.view = v; });
+    if (typeof LocArt !== 'undefined') G.region('ground', 'landmark', LocArt.sig(run), -STREET - 10, -460, 0, -8, Math.min(S, 1.5), c => LocArt.draw(c, run));
     G.groundFill.clear(); G.groundFill.beginFill(0x0c0a08).drawRect(gx0 - 4000, gy1 - 2, gx1 - gx0 + 8000, 4000).endFill();
     const top = floorY(map.F);
     G.region('mass', 'mass', 'm', -60, top - 60, map.BW + 60, SLAB + 30, S, c => { this.ctx = c; this.drawBuildingMass(run); });

@@ -57,7 +57,7 @@ const Skel = {
   // slip = < 1 lets the stride run a little behind the ground speed (very short legs would otherwise step frantically)
   GAIT: {
     walk:  { A: 46, K: 62, S: 0.6,  C: 4,  slip: 0.82 },
-    run:   { A: 56, K: 112, S: 0.36, C: 14, slip: 0.8 },
+    run:   { A: 60, K: 112, S: 0.4, C: 14, slip: 0.68 },
     sneak: { A: 24, K: 52, S: 0.62, C: 24, slip: 0.85 },
   },
   gp(gait) { return this.GAIT[gait] || this.GAIT.walk; },
@@ -206,11 +206,15 @@ const Skel = {
     const k = scale / SPR_PPU, ph = st.ph || 0, t = st.t || 0, cr = st.crouch || 0, climb = st.climb, sw = st.swing || 0;
     const amp = climb != null ? 0 : (st.amp || 0) * (1 - cr * 0.6);
     Puppet.cur = Object.assign(Puppet.cur || {}, { amp, gait: st.gait, ph, stance: (st.stance || 0) * (1 - cr) });
-    this._gait = st.gait; this._amp = amp;
-    const g = Puppet.g(), bob = (climb != null ? 0 : this.bobOf(m, ph, st.gait, amp) * (1 - cr)) + cr * 32, br = (1 - amp) * Math.sin(t * 2.1);
+    const legA = climb != null ? 0 : Math.max(amp, (st.stanceW || 0) * (1 - cr));
+    this._gait = st.gait; this._amp = legA; this._m = m;
+    // running: both feet leave the floor between steps (flight), the body rises a little there
+    const G0 = this.gp(st.gait), uu = (((ph / Math.PI) % 1) + 1) % 1, fs = 2 * G0.S;   // in each step: one foot on the floor until fs, then both in the air
+    const fl = st.gait === 'run' && fs < 1 && uu > fs ? Math.sin(Math.PI * (uu - fs) / (1 - fs)) : 0;
+    const g = Puppet.g(), bob = (climb != null ? 0 : this.bobOf(m, ph, st.gait, legA) * (1 - cr) - fl * 7 * amp) + cr * 32, br = (1 - amp) * Math.sin(t * 2.1);
     // body rhythm: lowest just after each heel strike (phase 0, π), highest as the legs pass; the torso / pack / head follow late
     const s2 = Math.cos(ph * 2), lagS = Math.cos(ph * 2 - 0.7), lagP = Math.cos(ph * 2 - 1.2);
-    const run = st.gait === 'run' && climb == null ? 1 : 0, kick = st.kick || 0;
+    const run = st.gait === 'run' && climb == null ? 1 : 0, kick = st.kick || 0, rc = st.rc || null;   // rc: recoil (tactical.js)
     const w = climb != null ? null : st.w, mode = w ? st.mode : 'free';
     const B = ctx.getTransform();   // world → screen, to read the muzzle back out
     ctx.save(); ctx.translate(x, y); ctx.scale(face * k, k); ctx.translate(-sm.ax - (st.downLean || 0) * 6, -sm.ay + bob);
@@ -248,6 +252,34 @@ const Skel = {
       // shooting down: the rifle stays shouldered and the whole upper body bends forward over it (hips back, knees soft);
       // the gun only turns the rest of the way inside the shoulders
       gr = this.grips(m, w, mode, (st.aimA || 0) - dRot, sw, ph, amp); lean = gr.lean || 0;
+      // walking with nothing to fight: a knife / machete / pistol hangs in the hand and the arms swing like anybody's;
+      // a bat / axe / katana stays on the shoulder in one hand and the other arm swings. st.guard (0..1) brings the
+      // fighting stance back as soon as there is a zombie close, a swing, or the player aims
+      const rel = melee && !aimed && sw <= 0 ? 1 - U.clamp(st.guard ?? 1, 0, 1) : 0;
+      const gun = !melee, dirA = (a) => [Math.cos(a), Math.sin(a)];
+      const refar = () => { if (gr.far && it.cls !== 'pistol') { const d = dirA(gr.ang); gr.far = [gr.near[0] + d[0] * 36, gr.near[1] + d[1] * 36]; } else if (gr.far) gr.far = [gr.near[0] - 3, gr.near[1] + 5]; };
+      // pistol with nothing around: "Sul" – both hands on it at the chest, muzzle pointing at the floor in front
+      if (it.cls === 'pistol' && !aimed && sw <= 0) { const q = 1 - U.clamp(st.guard ?? 1, 0, 1); gr.near = Tac.lerp(gr.near, [S[0] + 34, S[1] + 48], q); gr.ang += (1.15 - gr.ang) * q; refar(); }
+      // running with a gun: patrol carry – pulled in close, muzzle lower
+      if (gun && !aimed && run && !st.reload) { gr.ang += it.cls === 'pistol' ? 0.3 : 0.12; gr.near = [gr.near[0] - 6, gr.near[1] + 4]; refar(); }
+      // reloading in the workspace (gun in at the chest, muzzle up)
+      const rl = gun && st.reload ? st.reload : null;
+      if (rl) { Tac.reloadBody(gr, rl, it, S); refar(); }
+      if (rel > 0) {
+        const fk = (a, P0) => [P0[0] - L1 * Math.sin(a.up) - L2 * Math.sin(a.up + a.low), P0[1] + L1 * Math.cos(a.up) + L2 * Math.cos(a.up + a.low)];
+        const lerp = (A, B, k) => [A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k];
+        if (!['bat', 'fireaxe', 'katana'].includes(w.id)) {
+          const fa = this.freeArm(g, ph, amp * 0.85, t, run, true), rot = melee ? (typeof MELEE_ROT !== 'undefined' && MELEE_ROT[w.id]) || 0 : 0;
+          // the weapon crosses the palm (as in a fist), not hanging off the fingertips: knife point forward, a little down and
+          // following the swing only partly; machete blade forward-down; pistol muzzle toward the floor in front
+          const fa0 = fa.up + fa.low, tgt = w.id === 'knife' ? 0.2 + 0.35 * fa0 : it.cls === 'pistol' ? 0.75 + 0.4 * fa0 : 0.55 + 0.5 * fa0;
+          gr.near = lerp(gr.near, fk(fa, S), rel);
+          let da0 = tgt - rot - gr.ang; da0 = Math.atan2(Math.sin(da0), Math.cos(da0)); gr.ang += da0 * rel;
+          gr.go = [(5 * Math.cos(fa0) + 7 * Math.sin(fa0)) * rel, (5 * Math.sin(fa0) - 7 * Math.cos(fa0)) * rel];   // grip in the palm: in front of the forearm line, up toward the wrist
+        }
+        if (gr.far) gr.sFar = fk(this.freeArm(g, ph, amp, t, run, false), SF);
+        gr.rel = rel;
+      }
       // nobody holds a weapon locked in place: the hands are always alive
       //  - drift: slow wandering of the hands (muscles never hold perfectly still), larger when relaxed, small when aiming
       //  - steps: every footfall jolts the weapon down a beat late, and it rocks back and forth with the stride
@@ -255,15 +287,17 @@ const Skel = {
       //  - calm: after a few seconds of nothing happening the arms tire and the weapon sinks into a relaxed carry;
       //    the guard hand drops to the side; now and then the grip is re-settled
       const calm = sw > 0 || aimed ? 0 : (st.calm || 0), acc = U.clamp(st.acc || 0, -1.5, 1.5);
-      const dk = aimed ? 0.35 : 1 + calm * 0.6;
+      const dk = aimed ? 0.35 - 0.15 * amp : 1 + calm * 0.6;   // aiming on the move: the arms soak up the steps (the muzzle glides)
       const dx = (this.noise(t, 1) * 1.8 + amp * 1.4 * Math.cos(ph - 0.8) - acc * 2.5) * dk;
       const dy = (this.noise(t, 2) * 1.6 + amp * 2.4 * Math.cos(ph * 2 - 0.6)) * dk + 0.7 * br + calm * (melee ? 10 : 7);
       const fidg = calm > 0.5 ? Math.max(0, Math.sin((t / 6.7 - Math.floor(t / 6.7)) * Math.PI * 7)) * (t / 6.7 % 1 < 0.15 ? 1 : 0) : 0;   // a short grip re-settle every ~7 s
       const da = sw > 0 ? 0 : (this.noise(t, 3) * 0.035 + amp * (0.05 * Math.cos(ph * 2 - 1.0) + 0.035 * Math.cos(ph))) * dk - acc * 0.06
         + calm * (melee ? 0.3 : it.cls === 'pistol' ? 0.55 : 0.28) + fidg * 0.12;
-      const kx = -kick * 5;
+      const kx = -(rc ? rc.x : kick * 5);
       const nT = [gr.near[0] + kx + dx, gr.near[1] + dy - fidg * 3];
-      gr.nT = nT; gr.angNow = gr.ang - kick * (it.cls === 'pistol' ? 0.2 : 0.08) + da;
+      gr.nT = nT; gr.angNow = gr.ang - (rc ? rc.a : kick * (it.cls === 'pistol' ? 0.2 : 0.08)) + da;
+      const rh = rl ? Tac.reloadHand(rl, it, this.geom(w), S, nT, gr.angNow, gr.far ? (() => { const rx = gr.far[0] - gr.near[0], ry = gr.far[1] - gr.near[1], c = Math.cos(da), s0 = Math.sin(da); return [nT[0] + rx * c - ry * s0, nT[1] + rx * s0 + ry * c]; })() : nT) : null;
+      gr.rh = rh;
       nearA = this.ik(S[0], S[1], nT[0], nT[1], L1, L2); nearA.wrist = gr.far ? -0.25 : -0.05;
       if (gr.far) {
         let fT;
@@ -274,15 +308,20 @@ const Skel = {
           const rx = gr.far[0] - gr.near[0], ry = gr.far[1] - gr.near[1], c = Math.cos(da), s0 = Math.sin(da);
           fT = [nT[0] + rx * c - ry * s0, nT[1] + rx * s0 + ry * c];
         }
+        if (gr.sFar) fT = [fT[0] + (gr.sFar[0] - fT[0]) * gr.rel, fT[1] + (gr.sFar[1] - fT[1]) * gr.rel];   // relaxed: the free hand swings
+        if (rh && rh.far) fT = rh.far;   // reloading: the support hand does the work
         gr.fT = fT; farA = this.ik(SF[0], SF[1], fT[0], fT[1], L1, L2); farA.wrist = melee ? -1.0 + 0.9 * calm : -0.3;
       } else farA = this.freeArm(g, ph, amp, t, run, false);
     }
     // ---- body angles ----
     // seen from the side, hips and chest rock the same way on every step (twice per cycle) — a once-per-cycle rock reads as a limp
     const pelvisA = (amp * 1.6 * Math.cos(ph * 2 - 0.4) + cr * 4) * Math.PI / 180;
-    const chestA = (g.lean + run * 7 + amp * (1.2 * s2) + 0.7 * br - kick * 4 + (mode === 'aim' ? 2 : 0) + cr * 14 + lean + dRot * 180 / Math.PI
+    const gunUp = w && ITEMS[w.id].cls !== 'melee', aimG = gunUp && mode === 'aim', glide = aimG ? 0.35 : 1;
+    const tacLean = gunUp ? (run ? 3 : 4) + (aimG ? 3 : 0) : 0;   // a shooter leans into the gun (nose over toes)
+    const chestA = (g.lean + run * 7 + tacLean + U.clamp(st.acc || 0, -1.5, 1.5) * 4 + amp * (1.2 * s2) * glide + 0.7 * br - (rc ? rc.b : kick * 4) + (mode === 'aim' ? 2 : 0) + cr * 14 + lean + dRot * 180 / Math.PI
       + (climb != null ? -3 + 1.5 * Math.sin(climb * 2) : 0)) * Math.PI / 180;
-    const chestDy = amp * 1.6 * Math.max(0, lagS) - 0.8 * br + (climb != null ? 1.5 * Math.sin(climb * 2) : 0);
+    const chestDy = amp * 1.6 * Math.max(0, lagS) * glide - 0.8 * br + (climb != null ? 1.5 * Math.sin(climb * 2) : 0);
+    this._pelA = pelvisA;
     const toChest = () => { ctx.translate(J.waist[0], J.waist[1] + chestDy); ctx.rotate(chestA); ctx.translate(-J.waist[0], -J.waist[1]); };
     const cph = climb != null ? climb : null;
     // standing, the feet are a little apart; walking, both hips swing about (almost) the same point — a big offset makes one
@@ -300,12 +339,16 @@ const Skel = {
     }
     // ---- near leg, then the pelvis over the thigh tops ----
     ctx.save(); spin(T_LEGS); this.leg(ctx, base, m, hx + hipD, hy, ph, true, false, cr, cph); ctx.restore();
-    ctx.save(); spin(T_BODY); ctx.translate(hx, hy); ctx.rotate(pelvisA); ctx.translate(-hx, -hy);
-    ctx.translate(hx, hy); this.part(ctx, base, m, 'pelvis'); ctx.restore();
-    // ---- chest ----
-    ctx.save(); spin(T_BODY); toChest(); ctx.translate(J.waist[0], J.waist[1]); this.part(ctx, base, m, 'chest'); ctx.restore();
+    // ---- pelvis + chest: one skin bending at the waist (skin.js), or the two parts ----
+    ctx.save(); spin(T_BODY);
+    const cs = Math.cos(chestA), sn = Math.sin(chestA), [wx, wy] = J.waist;
+    if (!(this.torso && this.torso(ctx, base, m, pelvisA, [cs, sn, -sn, cs, wx - cs * wx + sn * wy, wy + chestDy - sn * wx - cs * wy]))) {
+      ctx.save(); ctx.translate(hx, hy); ctx.rotate(pelvisA); this.part(ctx, base, m, 'pelvis'); ctx.restore();
+      toChest(); ctx.translate(J.waist[0], J.waist[1]); this.part(ctx, base, m, 'chest');
+    }
+    ctx.restore();
     // ---- head (turns first when turning around) ----
-    const headA = (-0.55 * (g.lean + amp * 1.2 * s2) + amp * 1.5 * lagS + 0.5 * br + (gr && gr.cheek ? 6 : mode === 'aim' ? 3 : 0) + kick * 2 + cr * 16 + dl * 8 - lean * 0.4 - dRot * 0.55 * 180 / Math.PI
+    const headA = (-0.55 * (g.lean + amp * 1.2 * s2) + amp * 1.5 * lagS + 0.5 * br + (gr && gr.cheek ? 6 : mode === 'aim' ? 3 : 0) + (rc ? rc.b * 0.6 : kick * 2) - tacLean * 0.5 + cr * 16 + dl * 8 - lean * 0.4 - dRot * 0.55 * 180 / Math.PI
       + (climb != null ? -8 : 0)) * Math.PI / 180;
     ctx.save(); spin(T_HEAD, 0.74); toChest(); ctx.translate(J.neck[0], J.neck[1] + amp * 0.8 * lagS); ctx.rotate(headA); this.part(ctx, base, m, 'head'); ctx.restore();
     // ---- weapon + near arm ----
@@ -313,7 +356,7 @@ const Skel = {
     let muzzle = null;
     if (gr) {
       const it = ITEMS[w.id];
-      ctx.save(); ctx.translate(gr.nT[0], gr.nT[1]);
+      ctx.save(); ctx.translate(gr.nT[0] + (gr.go ? gr.go[0] : 0), gr.nT[1] + (gr.go ? gr.go[1] : 0));
       const ang = gr.angNow + (it.cls === 'melee' ? (typeof MELEE_ROT !== 'undefined' && MELEE_ROT[w.id]) || 0 : 0);
       Puppet.drawGunAt(ctx, w, 0, 0, ang);
       if (it.cls !== 'melee') {   // muzzle: the painted gun's length past the grip
@@ -327,7 +370,8 @@ const Skel = {
       ctx.restore();
       // support hand on a gun's handguard / a two-handed grip: in front of the chest. A one-handed blade's guard arm stays
       // behind the body — drawn in front, its fist piles onto the weapon hand and reads as extra hands
-      if (gr.far && (it.cls !== 'melee' || ['bat', 'fireaxe', 'katana'].includes(w.id))) this.arm(ctx, base, m, SF[0], SF[1], farA, true, null, true);
+      if (gr.rh && gr.rh.item) Tac.drawItem(ctx, gr.rh.item);   // magazine / shell in the support hand
+      if (gr.far && !(gr.rel > 0.5) && (it.cls !== 'melee' || ['bat', 'fireaxe', 'katana'].includes(w.id))) this.arm(ctx, base, m, SF[0], SF[1], farA, true, null, true);
     }
     this.arm(ctx, base, m, S[0], S[1], nearA, false);
     ctx.restore();

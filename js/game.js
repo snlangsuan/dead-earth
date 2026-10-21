@@ -410,6 +410,7 @@ const Run = {
     this.updateTraps(dt);
     if (this.updateExtract(dt)) return;
     this.updateProjectiles(dt);
+    this.tickShakes(dt);
     this.updateParticles(dt);
     this.updateSearch(dt);
     if (this.survivor && this.survivor.state === 'leaving') { this.survivor.t += dt; this.survivor.x -= 120 * dt; if (this.survivor.t > 2) this.survivor.state = 'gone'; }
@@ -1026,6 +1027,14 @@ const Run = {
     const T = U.clamp(Math.abs(tx - sx) / 380, 0.35, 0.95), g = ACID_G;
     Snd.spit(z.x, z.f);
     this.acid.push({ x: sx, y: sy, vx: (tx - sx) / T, vy: (ty - sy - 0.5 * g * T * T) / T, f: z.f, room: z.room, dmg: (z.Z.acid || z.Z.dmg) * (z.dmgK || 1), t: 2.5 });
+  },
+  // hit shakes on doors, locks, barricades and furniture count down here (in real time), never in the drawing code
+  tickShakes(dt) {
+    const dec = o => { if (o.hitT > 0) o.hitT = Math.max(0, o.hitT - dt); };
+    for (const d of this.map.doors) dec(d);
+    for (const lk of this.locks) dec(lk);
+    for (const b of this.barricades) dec(b);
+    for (const rm of this.map.rooms) for (const fu of rm.furn) dec(fu);
   },
   // ---------- projectiles ----------
   updateProjectiles(dt) {

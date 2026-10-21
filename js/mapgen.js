@@ -9,7 +9,7 @@ const DOOR_H = 128;  // doorway height
 // Furniture: w,h in px, loot table (null = decoration)
 const FURN = {
   bed:        { n: 'เตียง', w: 120, h: 46, loot: 'bed' },
-  bunk:       { n: 'เตียงสองชั้น', w: 110, h: 112, loot: 'bed' },
+  bunk:       { n: 'เตียงสองชั้น', w: 128, h: 112, loot: 'bed' },
   sofa:       { n: 'โซฟา', w: 110, h: 50, loot: 'bed' },
   wardrobe:   { n: 'ตู้เสื้อผ้า', w: 66, h: 120, loot: 'wardrobe' },
   rack:       { n: 'ราวเสื้อผ้า', w: 90, h: 92, loot: 'wardrobe' },

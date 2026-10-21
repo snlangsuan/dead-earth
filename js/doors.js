@@ -82,7 +82,6 @@ Object.assign(R, {
     for (const d of map.doors) {
       const a = map.rooms[d.a], c = map.rooms[d.b];
       if (!a.revealed && !c.revealed && !run.powered) continue;
-      d.hitT = Math.max(0, (d.hitT || 0) - 1 / 60);
       const shut = d.lk || (d.closed && !d.broken), y1 = floorY(d.f);
       if (shut) { ctx.fillStyle = d.lvl >= 2 && !d.lk ? '#5a6168' : '#3e2a1a'; ctx.fillRect(d.x - GAPH, y1 - DOOR_H + 2, GAPH * 2, DOOR_H - 4); }
       if (!d.lk && shut && d.hp < d.max) { const bw = 34; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(d.x - bw / 2 - 1, y1 - DOOR_H - 16, bw + 2, 6); ctx.fillStyle = d.hp / d.max > 0.5 ? '#e0b050' : '#ff6a3c'; ctx.fillRect(d.x - bw / 2, y1 - DOOR_H - 15, bw * d.hp / d.max, 4); }
